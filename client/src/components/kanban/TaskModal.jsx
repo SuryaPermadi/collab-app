@@ -36,6 +36,7 @@ export default function TaskModal({ task, roomId, onClose, onUpdate, onDelete })
       assignee_id: assigneeId || null,
     })
     setEdited(false)
+    onClose()
   }
 
   const addLabel = (e) => {
@@ -236,6 +237,7 @@ const styles = {
   sidebar: {
     width: 200, padding: 20, display: 'flex',
     flexDirection: 'column', gap: 20,
+    overflowY: 'auto',
   },
   field: { marginBottom: 20 },
   label: {
