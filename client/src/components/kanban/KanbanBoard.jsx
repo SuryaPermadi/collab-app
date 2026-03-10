@@ -2,19 +2,89 @@ import { useEffect, useState, useRef } from 'react'
 import { getSocket } from '../../hooks/useSocket.js'
 import TaskCard from './TaskCard.jsx'
 import TaskModal from './TaskModal.jsx'
+import BoardToolbar from './BoardToolbar.jsx'
+import api from '../../lib/api.js'
 
 export default function KanbanBoard({ roomId }) {
   const [columns, setColumns] = useState([])
   const [tasks, setTasks] = useState([])
   const [logs, setLogs] = useState([])
+  const [members, setMembers] = useState([])
   const [selectedTask, setSelectedTask] = useState(null)
   const [addingCol, setAddingCol] = useState(false)
   const [newColTitle, setNewColTitle] = useState('')
-  const [addingTask, setAddingTask] = useState(null) // columnId
+  const [addingTask, setAddingTask] = useState(null)
   const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [dragging, setDragging] = useState(null) // { taskId, fromCol }
-  const [dragOver, setDragOver] = useState(null) // { colId, position }
+  const [dragging, setDragging] = useState(null)
+  const [dragOver, setDragOver] = useState(null)
+  const [exporting, setExporting] = useState(false)
+  const [filters, setFilters] = useState({ search: '', assignee: '', priority: '', dueSoon: false })
+  const boardRef = useRef(null)
   const socket = getSocket()
+
+  // Fetch members untuk filter
+  useEffect(() => {
+    if (!roomId) return
+    api.get(`/rooms/${roomId}/members`)
+      .then(({ data }) => setMembers(data))
+      .catch(console.error)
+  }, [roomId])
+
+  // Filter logic
+  const getFilteredTasks = (colId) => {
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+
+    return tasks
+      .filter(t => t.column_id === colId)
+      .filter(t => {
+        if (filters.search) {
+          const q = filters.search.toLowerCase()
+          if (!t.title.toLowerCase().includes(q) &&
+            !(t.description || '').toLowerCase().includes(q)) return false
+        }
+        if (filters.assignee === 'unassigned' && t.assignee_id) return false
+        if (filters.assignee && filters.assignee !== 'unassigned' && t.assignee_id !== filters.assignee) return false
+        if (filters.priority && t.priority !== filters.priority) return false
+        if (filters.dueSoon) {
+          if (!t.due_date) return false
+          const due = new Date(t.due_date)
+          due.setHours(0, 0, 0, 0)
+          const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24))
+          if (diff > 3) return false
+        }
+        return true
+      })
+      .sort((a, b) => a.position - b.position)
+  }
+
+  // Export PDF
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ])
+
+      const el = boardRef.current
+      const canvas = await html2canvas(el, {
+        backgroundColor: '#080A0F',
+        scale: 1.5,
+        useCORS: true,
+        logging: false,
+      })
+
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] })
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height)
+      pdf.save(`board-${roomId?.slice(0, 8)}.pdf`)
+    } catch (err) {
+      console.error('Export error:', err)
+      alert('Gagal export PDF. Pastikan html2canvas & jspdf sudah terinstall.')
+    }
+    setExporting(false)
+  }
 
   useEffect(() => {
     if (!socket) return
@@ -113,126 +183,143 @@ export default function KanbanBoard({ roomId }) {
 
   return (
     <div style={styles.wrap}>
-      {/* Board */}
-      <div style={styles.board}>
-        {columns.map(col => (
-          <div
-            key={col.id}
-            style={{
-              ...styles.column,
-              outline: dragOver?.colId === col.id ? `2px solid ${col.color}` : 'none',
-            }}
-            onDragOver={(e) => handleDragOver(e, col.id, getColTasks(col.id).length)}
-            onDrop={(e) => handleDrop(e, col.id)}
-          >
-            {/* Column Header */}
-            <div style={styles.colHeader}>
-              <div style={styles.colLeft}>
-                <div style={{ ...styles.colDot, background: col.color }} />
-                <span style={styles.colTitle}>{col.title}</span>
-                <span style={styles.colCount}>{getColTasks(col.id).length}</span>
-              </div>
-              <button
-                style={styles.iconBtn}
-                onClick={() => deleteColumn(col.id)}
-                title="Hapus kolom"
-              >✕</button>
-            </div>
+      {/* Toolbar */}
+      <BoardToolbar
+        members={members}
+        filters={filters}
+        onFilterChange={setFilters}
+        onExport={handleExport}
+        exporting={exporting}
+      />
 
-            {/* Tasks */}
-            <div style={styles.taskList}>
-              {getColTasks(col.id).map((task, idx) => (
-                <div
-                  key={task.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, task.id, col.id)}
-                  onDragOver={(e) => { e.stopPropagation(); handleDragOver(e, col.id, idx) }}
-                  style={{ opacity: dragging?.taskId === task.id ? 0.4 : 1 }}
-                >
-                  <TaskCard
-                    task={task}
-                    onClick={() => setSelectedTask(task)}
-                  />
+      <div style={styles.inner}>
+        {/* Board */}
+        <div style={styles.board} ref={boardRef}>
+          {columns.map(col => {
+            const filteredTasks = getFilteredTasks(col.id)
+            const allColTasks = getColTasks(col.id)
+            return (
+              <div
+                key={col.id}
+                style={{
+                  ...styles.column,
+                  outline: dragOver?.colId === col.id ? `2px solid ${col.color}` : 'none',
+                }}
+                onDragOver={(e) => handleDragOver(e, col.id, allColTasks.length)}
+                onDrop={(e) => handleDrop(e, col.id)}
+              >
+                {/* Column Header */}
+                <div style={styles.colHeader}>
+                  <div style={styles.colLeft}>
+                    <div style={{ ...styles.colDot, background: col.color }} />
+                    <span style={styles.colTitle}>{col.title}</span>
+                    <span style={styles.colCount}>
+                      {filteredTasks.length}{filteredTasks.length !== allColTasks.length ? `/${allColTasks.length}` : ''}
+                    </span>
+                  </div>
+                  <button
+                    style={styles.iconBtn}
+                    onClick={() => deleteColumn(col.id)}
+                    title="Hapus kolom"
+                  >✕</button>
                 </div>
-              ))}
-            </div>
 
-            {/* Add Task */}
-            {addingTask === col.id ? (
-              <div style={styles.addTaskForm}>
+                {/* Tasks */}
+                <div style={styles.taskList}>
+                  {filteredTasks.map((task, idx) => (
+                    <div
+                      key={task.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, task.id, col.id)}
+                      onDragOver={(e) => { e.stopPropagation(); handleDragOver(e, col.id, idx) }}
+                      style={{ opacity: dragging?.taskId === task.id ? 0.4 : 1 }}
+                    >
+                      <TaskCard
+                        task={task}
+                        onClick={() => setSelectedTask(task)}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Task */}
+                {addingTask === col.id ? (
+                  <div style={styles.addTaskForm}>
+                    <input
+                      style={styles.input}
+                      placeholder="Nama task..."
+                      value={newTaskTitle}
+                      onChange={e => setNewTaskTitle(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') addTask(col.id)
+                        if (e.key === 'Escape') setAddingTask(null)
+                      }}
+                      autoFocus
+                    />
+                    <div style={styles.addTaskActions}>
+                      <button style={styles.btnAdd} onClick={() => addTask(col.id)}>Tambah</button>
+                      <button style={styles.btnCancel} onClick={() => setAddingTask(null)}>Batal</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    style={styles.addTaskBtn}
+                    onClick={() => { setAddingTask(col.id); setNewTaskTitle('') }}
+                  >
+                    + Tambah Task
+                  </button>
+                )}
+              </div>
+            )
+          })}
+
+          {/* Add Column */}
+          <div style={styles.addColWrap}>
+            {addingCol ? (
+              <div style={styles.addColForm}>
                 <input
                   style={styles.input}
-                  placeholder="Nama task..."
-                  value={newTaskTitle}
-                  onChange={e => setNewTaskTitle(e.target.value)}
+                  placeholder="Nama kolom..."
+                  value={newColTitle}
+                  onChange={e => setNewColTitle(e.target.value)}
                   onKeyDown={e => {
-                    if (e.key === 'Enter') addTask(col.id)
-                    if (e.key === 'Escape') setAddingTask(null)
+                    if (e.key === 'Enter') addColumn()
+                    if (e.key === 'Escape') setAddingCol(false)
                   }}
                   autoFocus
                 />
                 <div style={styles.addTaskActions}>
-                  <button style={styles.btnAdd} onClick={() => addTask(col.id)}>Tambah</button>
-                  <button style={styles.btnCancel} onClick={() => setAddingTask(null)}>Batal</button>
+                  <button style={styles.btnAdd} onClick={addColumn}>Tambah</button>
+                  <button style={styles.btnCancel} onClick={() => setAddingCol(false)}>Batal</button>
                 </div>
               </div>
             ) : (
-              <button
-                style={styles.addTaskBtn}
-                onClick={() => { setAddingTask(col.id); setNewTaskTitle('') }}
-              >
-                + Tambah Task
+              <button style={styles.addColBtn} onClick={() => setAddingCol(true)}>
+                + Kolom Baru
               </button>
             )}
           </div>
-        ))}
+        </div>
 
-        {/* Add Column */}
-        <div style={styles.addColWrap}>
-          {addingCol ? (
-            <div style={styles.addColForm}>
-              <input
-                style={styles.input}
-                placeholder="Nama kolom..."
-                value={newColTitle}
-                onChange={e => setNewColTitle(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') addColumn()
-                  if (e.key === 'Escape') setAddingCol(false)
-                }}
-                autoFocus
-              />
-              <div style={styles.addTaskActions}>
-                <button style={styles.btnAdd} onClick={addColumn}>Tambah</button>
-                <button style={styles.btnCancel} onClick={() => setAddingCol(false)}>Batal</button>
-              </div>
-            </div>
+        {/* Activity Feed */}
+        <div style={styles.feed}>
+          <div style={styles.feedTitle}>
+            <span style={{ color: '#00E5C3' }}>⚡</span> Aktivitas
+          </div>
+          {logs.length === 0 ? (
+            <div style={styles.feedEmpty}>Belum ada aktivitas</div>
           ) : (
-            <button style={styles.addColBtn} onClick={() => setAddingCol(true)}>
-              + Kolom Baru
-            </button>
+            logs.map((log, i) => (
+              <div key={log.id || i} style={styles.feedItem}>
+                <span style={styles.feedUser}>{log.user_name}</span>
+                <span style={styles.feedAction}> {log.action}</span>
+                <div style={styles.feedTime}>
+                  {new Date(log.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            ))
           )}
         </div>
-      </div>
-
-      {/* Activity Feed */}
-      <div style={styles.feed}>
-        <div style={styles.feedTitle}>
-          <span style={{ color: '#00E5C3' }}>⚡</span> Aktivitas
-        </div>
-        {logs.length === 0 ? (
-          <div style={styles.feedEmpty}>Belum ada aktivitas</div>
-        ) : (
-          logs.map((log, i) => (
-            <div key={log.id || i} style={styles.feedItem}>
-              <span style={styles.feedUser}>{log.user_name}</span>
-              <span style={styles.feedAction}> {log.action}</span>
-              <div style={styles.feedTime}>
-                {new Date(log.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-              </div>
-            </div>
-          ))
-        )}
       </div>
 
       {/* Task Detail Modal */}
@@ -257,8 +344,11 @@ export default function KanbanBoard({ roomId }) {
 
 const styles = {
   wrap: {
-    display: 'flex', height: '100%', overflow: 'hidden',
+    display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden',
     background: '#080A0F',
+  },
+  inner: {
+    display: 'flex', flex: 1, overflow: 'hidden',
   },
   board: {
     flex: 1, display: 'flex', gap: 16, padding: 24,
