@@ -1,19 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import api from '../../lib/api.js'
 
 const PRIORITIES = ['low', 'medium', 'high']
 const PRIORITY_COLORS = { low: '#00E5C3', medium: '#FFB347', high: '#FF4D6D' }
 
-export default function TaskModal({ task, onClose, onUpdate, onDelete }) {
+export default function TaskModal({ task, roomId, onClose, onUpdate, onDelete }) {
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description || '')
   const [priority, setPriority] = useState(task.priority || 'medium')
   const [dueDate, setDueDate] = useState(task.due_date ? task.due_date.split('T')[0] : '')
   const [labelInput, setLabelInput] = useState('')
   const [labels, setLabels] = useState(task.labels || [])
+  const [assigneeId, setAssigneeId] = useState(task.assignee_id || '')
+  const [members, setMembers] = useState([])
   const [edited, setEdited] = useState(false)
 
+  // Fetch members room
+  useEffect(() => {
+    if (!roomId) return
+    api.get(`/rooms/${roomId}/members`)
+      .then(({ data }) => setMembers(data))
+      .catch(console.error)
+  }, [roomId])
+
   const handleSave = () => {
-    onUpdate({ title, description, priority, due_date: dueDate || null, labels })
+    onUpdate({
+      title,
+      description,
+      priority,
+      due_date: dueDate || null,
+      labels,
+      assignee_id: assigneeId || null,
+    })
     setEdited(false)
   }
 
@@ -30,6 +48,8 @@ export default function TaskModal({ task, onClose, onUpdate, onDelete }) {
     setLabels(labels.filter(l => l !== label))
     setEdited(true)
   }
+
+  const selectedMember = members.find(m => m.id === assigneeId)
 
   return (
     <div style={styles.overlay} onClick={onClose}>
@@ -82,6 +102,38 @@ export default function TaskModal({ task, onClose, onUpdate, onDelete }) {
 
           {/* Right sidebar */}
           <div style={styles.sidebar}>
+
+            {/* Assignee Dropdown */}
+            <div style={styles.field}>
+              <label style={styles.label}>Assignee</label>
+
+              {/* Preview assignee terpilih */}
+              {selectedMember && (
+                <div style={styles.assigneePreview}>
+                  <div style={{
+                    ...styles.avatarCircle,
+                    background: selectedMember.avatar_color
+                  }}>
+                    {selectedMember.name[0].toUpperCase()}
+                  </div>
+                  <span style={styles.assigneeName}>{selectedMember.name}</span>
+                </div>
+              )}
+
+              <select
+                style={styles.select}
+                value={assigneeId}
+                onChange={e => { setAssigneeId(e.target.value); setEdited(true) }}
+              >
+                <option value="">— Tidak ada —</option>
+                {members.map(member => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} {member.role === 'owner' ? '(Owner)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Priority */}
             <div style={styles.field}>
               <label style={styles.label}>Prioritas</label>
@@ -155,9 +207,7 @@ const styles = {
     background: 'none', border: 'none', color: '#5A6380',
     cursor: 'pointer', fontSize: 16, padding: '4px 8px',
   },
-  body: {
-    display: 'flex', flex: 1, overflow: 'hidden',
-  },
+  body: { display: 'flex', flex: 1, overflow: 'hidden' },
   main: {
     flex: 1, padding: 20, overflowY: 'auto',
     borderRight: '1px solid #1E2433',
@@ -193,9 +243,28 @@ const styles = {
   },
   labelInput: {
     background: 'none', border: 'none', color: '#5A6380',
-    fontSize: 12, fontFamily: 'inherit', outline: 'none',
-    minWidth: 100,
+    fontSize: 12, fontFamily: 'inherit', outline: 'none', minWidth: 100,
   },
+
+  // ─── Assignee styles ───────────────────────────────────
+  assigneePreview: {
+    display: 'flex', alignItems: 'center', gap: 8,
+    padding: '8px 10px', background: '#080A0F',
+    border: '1px solid #1E2433', marginBottom: 8,
+  },
+  avatarCircle: {
+    width: 24, height: 24, borderRadius: '50%',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 11, fontWeight: 700, color: '#080A0F', flexShrink: 0,
+  },
+  assigneeName: { fontSize: 12, color: '#E8EBF2', fontWeight: 600 },
+  select: {
+    width: '100%', background: '#080A0F', border: '1px solid #1E2433',
+    color: '#E8EBF2', padding: '8px 10px', fontSize: 12,
+    fontFamily: 'inherit', outline: 'none', cursor: 'pointer',
+    boxSizing: 'border-box',
+  },
+
   priorityGroup: { display: 'flex', flexDirection: 'column', gap: 6 },
   priorityBtn: {
     background: 'none', border: '1px solid',

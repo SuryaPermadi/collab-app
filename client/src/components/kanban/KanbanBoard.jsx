@@ -239,6 +239,7 @@ export default function KanbanBoard({ roomId }) {
       {selectedTask && (
         <TaskModal
           task={selectedTask}
+          roomId={roomId}
           onClose={() => setSelectedTask(null)}
           onUpdate={(updates) => {
             socket?.emit('task:update', { id: selectedTask.id, updates })
