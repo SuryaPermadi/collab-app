@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 const PRIORITY_CONFIG = {
     low: { label: 'Low', color: '#00E5C3', bg: 'rgba(0,229,195,0.1)' },
     medium: { label: 'Medium', color: '#FFB347', bg: 'rgba(255,179,71,0.1)' },
