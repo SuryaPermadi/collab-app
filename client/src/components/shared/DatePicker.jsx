@@ -106,7 +106,7 @@ export default function DatePicker({ value, onChange, onClose }) {
 const styles = {
     wrap: {
         background: '#0F1420', border: '1px solid #1E2433',
-        padding: 10, width: '100%', boxSizing: 'border-box',
+        padding: 12, width: '100%', boxSizing: 'border-box',
     },
     header: {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -130,9 +130,9 @@ const styles = {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
     },
     dayBtn: {
-        width: 24, height: 24, borderRadius: 2,
+        width: 30, height: 30, borderRadius: 2,
         background: 'none', border: 'none',
-        color: '#C8CBD6', cursor: 'pointer', fontSize: 11,
+        color: '#C8CBD6', cursor: 'pointer', fontSize: 12,
         fontFamily: 'monospace', transition: 'all 0.15s',
         padding: 0,
     },

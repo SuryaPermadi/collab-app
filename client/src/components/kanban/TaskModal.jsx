@@ -162,30 +162,28 @@ export default function TaskModal({ task, roomId, onClose, onUpdate, onDelete })
             {/* Due Date */}
             <div style={styles.field}>
               <label style={styles.label}>Due Date</label>
-              <div ref={calendarRef} style={{ position: 'relative' }}>
-                <button
-                  style={styles.dateBtn}
-                  onClick={() => setShowCalendar(v => !v)}
-                >
-                  {dueDate
-                    ? `📅 ${new Date(dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                    : '📅 Pilih tanggal...'}
-                </button>
+              <button
+                style={styles.dateBtn}
+                onClick={() => setShowCalendar(v => !v)}
+              >
+                {dueDate
+                  ? `📅 ${new Date(dueDate + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                  : '📅 Pilih tanggal...'}
+              </button>
 
-                {showCalendar && (
-                  <div style={styles.calendarWrap}>
-                    <DatePicker
-                      value={dueDate}
-                      onChange={(val) => {
-                        setDueDate(val)
-                        setEdited(true)
-                        setShowCalendar(false)
-                      }}
-                      onClose={() => setShowCalendar(false)}
-                    />
-                  </div>
-                )}
-              </div>
+              {showCalendar && (
+                <div style={{ marginTop: 8 }}>
+                  <DatePicker
+                    value={dueDate}
+                    onChange={(val) => {
+                      setDueDate(val)
+                      setEdited(true)
+                      setShowCalendar(false)
+                    }}
+                    onClose={() => setShowCalendar(false)}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Actions */}
@@ -214,7 +212,7 @@ const styles = {
   },
   modal: {
     background: '#0F1420', border: '1px solid #1E2433',
-    width: 680, maxWidth: '95vw', maxHeight: '85vh',
+    width: 780, maxWidth: '95vw', maxHeight: '85vh',
     display: 'flex', flexDirection: 'column', overflow: 'hidden',
   },
   header: {
@@ -235,7 +233,7 @@ const styles = {
     borderRight: '1px solid #1E2433',
   },
   sidebar: {
-    width: 200, padding: 20, display: 'flex',
+    width: 280, padding: 20, display: 'flex',
     flexDirection: 'column', gap: 20,
     overflowY: 'auto',
   },
@@ -298,11 +296,7 @@ const styles = {
     width: '100%', background: '#080A0F', border: '1px solid #1E2433',
     color: '#E8EBF2', padding: '8px 10px', fontSize: 12,
     fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left',
-    boxSizing: 'border-box', transition: 'border-color 0.2s',
-  },
-  calendarWrap: {
-    position: 'absolute', right: 0, bottom: 'calc(100% + 4px)',
-    zIndex: 999,
+    boxSizing: 'border-box',
   },
   actions: { display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' },
   btnSave: {
