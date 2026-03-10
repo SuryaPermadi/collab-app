@@ -299,7 +299,7 @@ const styles = {
     boxSizing: 'border-box', transition: 'border-color 0.2s',
   },
   calendarWrap: {
-    position: 'absolute', right: 0, top: 'calc(100% + 4px)',
+    position: 'absolute', right: 0, bottom: 'calc(100% + 4px)',
     zIndex: 999,
   },
   actions: { display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' },
