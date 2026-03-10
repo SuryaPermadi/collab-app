@@ -6,26 +6,28 @@ const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
 
 export default function DatePicker({ value, onChange, onClose }) {
     const today = new Date()
-    const selected = value ? new Date(value) : null
+    today.setHours(0, 0, 0, 0)
 
-    const [viewDate, setViewDate] = useState(selected || today)
+    const selected = value ? new Date(value + 'T00:00:00') : null
+
+    const [viewDate, setViewDate] = useState(selected || new Date())
 
     const year = viewDate.getFullYear()
     const month = viewDate.getMonth()
 
-    // Hari pertama bulan ini
     const firstDay = new Date(year, month, 1).getDay()
-    // Total hari di bulan ini
     const daysInMonth = new Date(year, month + 1, 0).getDate()
 
     const prevMonth = () => setViewDate(new Date(year, month - 1, 1))
     const nextMonth = () => setViewDate(new Date(year, month + 1, 1))
 
     const handleSelect = (day) => {
-        const picked = new Date(year, month, day)
-        // Format YYYY-MM-DD
-        const formatted = picked.toISOString().split('T')[0]
-        onChange(formatted)
+        const d = new Date(year, month, day)
+        // Format YYYY-MM-DD manual agar tidak timezone issue
+        const yyyy = d.getFullYear()
+        const mm = String(d.getMonth() + 1).padStart(2, '0')
+        const dd = String(d.getDate()).padStart(2, '0')
+        onChange(`${yyyy}-${mm}-${dd}`)
         onClose?.()
     }
 
@@ -37,63 +39,59 @@ export default function DatePicker({ value, onChange, onClose }) {
     }
 
     const isToday = (day) => {
-        return today.getFullYear() === year &&
-            today.getMonth() === month &&
-            today.getDate() === day
+        const t = new Date()
+        return t.getFullYear() === year &&
+            t.getMonth() === month &&
+            t.getDate() === day
     }
 
+    // Hanya disable tanggal yang SEBELUM hari ini (kemarin ke belakang)
     const isPast = (day) => {
         const d = new Date(year, month, day)
         d.setHours(0, 0, 0, 0)
-        const t = new Date()
-        t.setHours(0, 0, 0, 0)
-        return d < t
+        return d < today
     }
 
-    // Buat array cells (null = kosong, number = tanggal)
     const cells = []
     for (let i = 0; i < firstDay; i++) cells.push(null)
     for (let d = 1; d <= daysInMonth; d++) cells.push(d)
 
     return (
         <div style={styles.wrap}>
-            {/* Header navigasi bulan */}
             <div style={styles.header}>
                 <button style={styles.navBtn} onClick={prevMonth}>‹</button>
-                <span style={styles.monthLabel}>
-                    {MONTHS[month]} {year}
-                </span>
+                <span style={styles.monthLabel}>{MONTHS[month]} {year}</span>
                 <button style={styles.navBtn} onClick={nextMonth}>›</button>
             </div>
 
-            {/* Nama hari */}
             <div style={styles.grid}>
                 {DAYS.map(d => (
                     <div key={d} style={styles.dayName}>{d}</div>
                 ))}
-
-                {/* Cells */}
-                {cells.map((day, i) => (
-                    <div key={i} style={styles.cell}>
-                        {day && (
-                            <button
-                                style={{
-                                    ...styles.dayBtn,
-                                    ...(isSameDay(day) ? styles.selected : {}),
-                                    ...(isToday(day) && !isSameDay(day) ? styles.today : {}),
-                                    ...(isPast(day) ? styles.past : {}),
-                                }}
-                                onClick={() => !isPast(day) && handleSelect(day)}
-                                disabled={isPast(day)}
-                            >
-                                {day}
-                            </button>
-                        )}
-                    </div>
-                ))}
+                {cells.map((day, i) => {
+                    const past = day ? isPast(day) : false
+                    const selected_ = day ? isSameDay(day) : false
+                    const today_ = day ? isToday(day) : false
+                    return (
+                        <div key={i} style={styles.cell}>
+                            {day && (
+                                <button
+                                    style={{
+                                        ...styles.dayBtn,
+                                        ...(selected_ ? styles.selected : {}),
+                                        ...(today_ && !selected_ ? styles.today : {}),
+                                        ...(past ? styles.past : {}),
+                                    }}
+                                    onClick={() => !past && handleSelect(day)}
+                                >
+                                    {day}
+                                </button>
+                            )}
+                        </div>
+                    )
+                })}
             </div>
 
-            {/* Clear button */}
             {value && (
                 <div style={styles.footer}>
                     <button style={styles.clearBtn} onClick={() => { onChange(null); onClose?.() }}>
@@ -108,8 +106,7 @@ export default function DatePicker({ value, onChange, onClose }) {
 const styles = {
     wrap: {
         background: '#0F1420', border: '1px solid #1E2433',
-        padding: 16, width: 240,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        padding: 10, width: '100%', boxSizing: 'border-box',
     },
     header: {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -118,7 +115,6 @@ const styles = {
     navBtn: {
         background: 'none', border: 'none', color: '#5A6380',
         cursor: 'pointer', fontSize: 18, padding: '2px 8px',
-        transition: 'color 0.2s',
     },
     monthLabel: {
         fontSize: 13, fontWeight: 700, color: '#E8EBF2', fontFamily: 'monospace',
@@ -134,10 +130,11 @@ const styles = {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
     },
     dayBtn: {
-        width: 28, height: 28, borderRadius: 2,
+        width: 24, height: 24, borderRadius: 2,
         background: 'none', border: 'none',
-        color: '#C8CBD6', cursor: 'pointer', fontSize: 12,
+        color: '#C8CBD6', cursor: 'pointer', fontSize: 11,
         fontFamily: 'monospace', transition: 'all 0.15s',
+        padding: 0,
     },
     selected: {
         background: '#00E5C3', color: '#080A0F', fontWeight: 700,
