@@ -94,8 +94,10 @@ export default function RoomPage() {
         </div>
 
         <PresenceBar />
-        <ThemeToggle />
-        <NotificationBell />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <ThemeToggle />
+          <NotificationBell />
+        </div>
       </header>
 
       {/* Content */}
