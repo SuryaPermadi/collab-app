@@ -7,6 +7,7 @@ import api from '../lib/api.js'
 import PresenceBar from '../components/shared/PresenceBar.jsx'
 import CollabEditor from '../components/editor/CollabEditor.jsx'
 import CollabCanvas from '../components/canvas/CollabCanvas.jsx'
+import KanbanBoard from '../components/kanban/KanbanBoard.jsx'
 
 export default function RoomPage() {
   const { roomId } = useParams()
@@ -67,6 +68,12 @@ export default function RoomPage() {
 
         <div style={styles.tabs}>
           <button
+            style={{ ...styles.tab, ...(activeTab === 'board' ? styles.tabActive : {}) }}
+            onClick={() => setActiveTab('board')}
+          >
+            🗂 Board
+          </button>
+          <button
             style={{ ...styles.tab, ...(activeTab === 'editor' ? styles.tabActive : {}) }}
             onClick={() => setActiveTab('editor')}
           >
@@ -85,6 +92,7 @@ export default function RoomPage() {
 
       {/* Content */}
       <div style={styles.content}>
+        {activeTab === 'board' && <KanbanBoard roomId={roomId} />}
         {activeTab === 'editor' && <CollabEditor roomId={roomId} />}
         {activeTab === 'canvas' && <CollabCanvas roomId={roomId} />}
       </div>

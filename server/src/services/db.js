@@ -58,6 +58,40 @@ const SCHEMA = `
     snapshot   BYTEA,
     created_at TIMESTAMP DEFAULT NOW()
   );
+
+  CREATE TABLE IF NOT EXISTS board_columns (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    room_id    UUID REFERENCES rooms(id) ON DELETE CASCADE,
+    title      VARCHAR(100) NOT NULL,
+    color      VARCHAR(7) DEFAULT '#1E2433',
+    position   INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+
+  CREATE TABLE IF NOT EXISTS tasks (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    room_id     UUID REFERENCES rooms(id) ON DELETE CASCADE,
+    column_id   UUID REFERENCES board_columns(id) ON DELETE CASCADE,
+    title       VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT '',
+    priority    VARCHAR(20) DEFAULT 'medium',
+    assignee_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    due_date    DATE,
+    labels      TEXT[] DEFAULT '{}',
+    position    INTEGER DEFAULT 0,
+    created_by  UUID REFERENCES users(id),
+    created_at  TIMESTAMP DEFAULT NOW(),
+    updated_at  TIMESTAMP DEFAULT NOW()
+  );
+
+  CREATE TABLE IF NOT EXISTS activity_logs (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    room_id    UUID REFERENCES rooms(id) ON DELETE CASCADE,
+    user_id    UUID REFERENCES users(id) ON DELETE SET NULL,
+    user_name  VARCHAR(100),
+    action     VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
 `
 
 export async function connectDB() {
