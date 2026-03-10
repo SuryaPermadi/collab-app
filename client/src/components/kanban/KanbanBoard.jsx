@@ -68,20 +68,48 @@ export default function KanbanBoard({ roomId }) {
       ])
 
       const el = boardRef.current
+
+      // Simpan scroll position
+      const scrollLeft = el.scrollLeft
+      const scrollTop = el.scrollTop
+
+      // Reset scroll supaya semua konten ke-capture
+      el.scrollLeft = 0
+      el.scrollTop = 0
+
+      // Paksa lebar penuh
+      const originalOverflow = el.style.overflow
+      el.style.overflow = 'visible'
+
       const canvas = await html2canvas(el, {
         backgroundColor: '#080A0F',
         scale: 1.5,
         useCORS: true,
         logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+        windowWidth: el.scrollWidth,
+        windowHeight: el.scrollHeight,
       })
 
+      // Restore scroll dan overflow
+      el.style.overflow = originalOverflow
+      el.scrollLeft = scrollLeft
+      el.scrollTop = scrollTop
+
       const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] })
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height)
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [canvas.width / 1.5, canvas.height / 1.5],
+      })
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 1.5, canvas.height / 1.5)
       pdf.save(`board-${roomId?.slice(0, 8)}.pdf`)
     } catch (err) {
       console.error('Export error:', err)
-      alert('Gagal export PDF. Pastikan html2canvas & jspdf sudah terinstall.')
+      alert('Gagal export PDF.')
     }
     setExporting(false)
   }
