@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { getSocket } from '../../hooks/useSocket.js'
-import TaskCard from './TaskCard.jsx'
+import TaskCard from './Taskcard.jsx'
 import TaskModal from './TaskModal.jsx'
 
 export default function KanbanBoard({ roomId }) {

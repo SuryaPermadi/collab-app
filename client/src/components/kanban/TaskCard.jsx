@@ -6,7 +6,7 @@ const PRIORITY_CONFIG = {
     high: { label: 'High', color: '#FF4D6D', bg: 'rgba(255,77,109,0.1)' },
 }
 
-export default function TaskCard({ task, onClick }) {
+export default function Taskcard({ task, onClick }) {
     const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium
 
     const isOverdue = task.due_date && new Date(task.due_date) < new Date()
