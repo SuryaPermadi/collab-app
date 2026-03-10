@@ -92,6 +92,15 @@ const SCHEMA = `
     action     VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
   );
+
+  CREATE TABLE IF NOT EXISTS subtasks (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    task_id    UUID REFERENCES tasks(id) ON DELETE CASCADE,
+    title      VARCHAR(255) NOT NULL,
+    done       BOOLEAN DEFAULT FALSE,
+    position   INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
 `
 
 export async function connectDB() {

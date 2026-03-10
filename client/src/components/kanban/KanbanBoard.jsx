@@ -3,6 +3,7 @@ import { getSocket } from '../../hooks/useSocket.js'
 import TaskCard from './TaskCard.jsx'
 import TaskModal from './TaskModal.jsx'
 import BoardToolbar from './BoardToolbar.jsx'
+import BoardStats from './BoardStats.jsx'
 import api from '../../lib/api.js'
 
 export default function KanbanBoard({ roomId }) {
@@ -219,6 +220,9 @@ export default function KanbanBoard({ roomId }) {
         onExport={handleExport}
         exporting={exporting}
       />
+
+      {/* Stats */}
+      <BoardStats columns={columns} tasks={tasks} />
 
       <div style={styles.inner}>
         {/* Board */}

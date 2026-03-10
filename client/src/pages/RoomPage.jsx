@@ -5,9 +5,12 @@ import { useRoomStore } from '../stores/index.js'
 import { useAuthStore } from '../stores/index.js'
 import api from '../lib/api.js'
 import PresenceBar from '../components/shared/PresenceBar.jsx'
+import NotificationBell from '../components/shared/NotificationBell.jsx'
+import ThemeToggle from '../components/shared/ThemeToggle.jsx'
 import CollabEditor from '../components/editor/CollabEditor.jsx'
 import CollabCanvas from '../components/canvas/CollabCanvas.jsx'
 import KanbanBoard from '../components/kanban/KanbanBoard.jsx'
+import { useNotifications } from '../hooks/useNotifications.js'
 
 export default function RoomPage() {
   const { roomId } = useParams()
@@ -18,6 +21,9 @@ export default function RoomPage() {
   const { joinRoom } = useSocket()
   const { activeTab, setActiveTab } = useRoomStore()
   const user = useAuthStore(s => s.user)
+
+  // Aktifkan sistem notifikasi
+  useNotifications()
 
   useEffect(() => {
     async function init() {
@@ -88,6 +94,8 @@ export default function RoomPage() {
         </div>
 
         <PresenceBar />
+        <ThemeToggle />
+        <NotificationBell />
       </header>
 
       {/* Content */}

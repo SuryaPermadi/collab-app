@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import api from '../../lib/api.js'
 import DatePicker from '../shared/DatePicker.jsx'
+import SubtaskList from './SubtaskList.jsx'
+import { useThemeStore } from '../../stores/themeStore.js'
 
 const PRIORITIES = ['low', 'medium', 'high']
 const PRIORITY_COLORS = { low: '#00E5C3', medium: '#FFB347', high: '#FF4D6D' }
 
 export default function TaskModal({ task, roomId, onClose, onUpdate, onDelete }) {
+  const { colors: c } = useThemeStore()
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description || '')
   const [priority, setPriority] = useState(task.priority || 'medium')
@@ -101,6 +104,12 @@ export default function TaskModal({ task, roomId, onClose, onUpdate, onDelete })
                   placeholder="Ketik + Enter..."
                 />
               </div>
+            </div>
+
+            {/* Sub-tasks */}
+            <div style={styles.field}>
+              <label style={styles.label}>Sub-task</label>
+              <SubtaskList taskId={task.id} colors={c} />
             </div>
           </div>
 

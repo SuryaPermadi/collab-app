@@ -268,4 +268,64 @@ export function handleKanban(io, socket) {
       console.error('task:delete error:', err.message)
     }
   })
+
+  // ─── GET subtasks ─────────────────────────────────────
+  socket.on('subtask:get', async ({ taskId }) => {
+    try {
+      const subtasks = await db.findMany(
+        'SELECT * FROM subtasks WHERE task_id = $1 ORDER BY position ASC',
+        [taskId]
+      )
+      socket.emit('subtask:loaded', { taskId, subtasks })
+    } catch (err) {
+      console.error('subtask:get error:', err.message)
+    }
+  })
+
+  // ─── ADD subtask ──────────────────────────────────────
+  socket.on('subtask:add', async ({ taskId, title }) => {
+    const roomId = socket.roomId
+    if (!roomId) return
+    try {
+      const maxPos = await db.findOne(
+        'SELECT COALESCE(MAX(position), -1) as max FROM subtasks WHERE task_id = $1',
+        [taskId]
+      )
+      const subtask = await db.findOne(
+        `INSERT INTO subtasks (id, task_id, title, position)
+         VALUES ($1, $2, $3, $4) RETURNING *`,
+        [uuidv4(), taskId, title, (maxPos?.max ?? -1) + 1]
+      )
+      io.to(roomId).emit('subtask:added', { taskId, subtask })
+    } catch (err) {
+      console.error('subtask:add error:', err.message)
+    }
+  })
+
+  // ─── TOGGLE subtask ───────────────────────────────────
+  socket.on('subtask:toggle', async ({ id, taskId }) => {
+    const roomId = socket.roomId
+    if (!roomId) return
+    try {
+      const subtask = await db.findOne(
+        'UPDATE subtasks SET done = NOT done WHERE id = $1 RETURNING *',
+        [id]
+      )
+      io.to(roomId).emit('subtask:toggled', { taskId, subtask })
+    } catch (err) {
+      console.error('subtask:toggle error:', err.message)
+    }
+  })
+
+  // ─── DELETE subtask ───────────────────────────────────
+  socket.on('subtask:delete', async ({ id, taskId }) => {
+    const roomId = socket.roomId
+    if (!roomId) return
+    try {
+      await db.query('DELETE FROM subtasks WHERE id = $1', [id])
+      io.to(roomId).emit('subtask:deleted', { taskId, id })
+    } catch (err) {
+      console.error('subtask:delete error:', err.message)
+    }
+  })
 }
