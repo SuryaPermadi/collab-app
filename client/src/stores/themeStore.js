@@ -32,13 +32,26 @@ const LIGHT = {
     warning: '#D97706',
 }
 
+function applyTheme(colors) {
+    const root = document.documentElement
+    Object.entries(colors).forEach(([key, value]) => {
+        root.style.setProperty(`--${key}`, value)
+    })
+}
+
+const saved = localStorage.getItem('theme') || 'dark'
+const initialColors = saved === 'light' ? LIGHT : DARK
+applyTheme(initialColors)
+
 export const useThemeStore = create((set, get) => ({
-    mode: localStorage.getItem('theme') || 'dark',
-    colors: localStorage.getItem('theme') === 'light' ? LIGHT : DARK,
+    mode: saved,
+    colors: initialColors,
 
     toggle: () => {
         const next = get().mode === 'dark' ? 'light' : 'dark'
+        const nextColors = next === 'dark' ? DARK : LIGHT
         localStorage.setItem('theme', next)
-        set({ mode: next, colors: next === 'dark' ? DARK : LIGHT })
+        applyTheme(nextColors)
+        set({ mode: next, colors: nextColors })
     },
 }))
