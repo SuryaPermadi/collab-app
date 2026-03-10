@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import api from '../../lib/api.js'
+import DatePicker from '../shared/DatePicker.jsx'
 
 const PRIORITIES = ['low', 'medium', 'high']
 const PRIORITY_COLORS = { low: '#00E5C3', medium: '#FFB347', high: '#FF4D6D' }
@@ -8,6 +9,8 @@ export default function TaskModal({ task, roomId, onClose, onUpdate, onDelete })
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description || '')
   const [priority, setPriority] = useState(task.priority || 'medium')
+  const [showCalendar, setShowCalendar] = useState(false)
+  const calendarRef = useRef(null)
   const [dueDate, setDueDate] = useState(task.due_date ? task.due_date.split('T')[0] : '')
   const [labelInput, setLabelInput] = useState('')
   const [labels, setLabels] = useState(task.labels || [])
@@ -158,12 +161,30 @@ export default function TaskModal({ task, roomId, onClose, onUpdate, onDelete })
             {/* Due Date */}
             <div style={styles.field}>
               <label style={styles.label}>Due Date</label>
-              <input
-                type="date"
-                style={styles.dateInput}
-                value={dueDate}
-                onChange={e => { setDueDate(e.target.value); setEdited(true) }}
-              />
+              <div ref={calendarRef} style={{ position: 'relative' }}>
+                <button
+                  style={styles.dateBtn}
+                  onClick={() => setShowCalendar(v => !v)}
+                >
+                  {dueDate
+                    ? `📅 ${new Date(dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                    : '📅 Pilih tanggal...'}
+                </button>
+
+                {showCalendar && (
+                  <div style={styles.calendarWrap}>
+                    <DatePicker
+                      value={dueDate}
+                      onChange={(val) => {
+                        setDueDate(val)
+                        setEdited(true)
+                        setShowCalendar(false)
+                      }}
+                      onClose={() => setShowCalendar(false)}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Actions */}
@@ -271,10 +292,15 @@ const styles = {
     padding: '6px 10px', cursor: 'pointer', fontSize: 12,
     fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.15s',
   },
-  dateInput: {
+  dateBtn: {
     width: '100%', background: '#080A0F', border: '1px solid #1E2433',
     color: '#E8EBF2', padding: '8px 10px', fontSize: 12,
-    fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box',
+    fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left',
+    boxSizing: 'border-box', transition: 'border-color 0.2s',
+  },
+  calendarWrap: {
+    position: 'absolute', right: 0, top: 'calc(100% + 4px)',
+    zIndex: 999,
   },
   actions: { display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' },
   btnSave: {
