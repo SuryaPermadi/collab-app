@@ -10,7 +10,6 @@ import ThemeToggle from '../components/shared/ThemeToggle.jsx'
 import CollabEditor from '../components/editor/CollabEditor.jsx'
 import CollabCanvas from '../components/canvas/CollabCanvas.jsx'
 import KanbanBoard from '../components/kanban/KanbanBoard.jsx'
-import RoomChat from '../components/chat/RoomChat.jsx'
 import { useNotifications } from '../hooks/useNotifications.js'
 
 export default function RoomPage() {
@@ -94,9 +93,8 @@ export default function RoomPage() {
           </button>
         </div>
 
+        <PresenceBar />
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <PresenceBar />
-          <RoomChat roomId={roomId} />
           <ThemeToggle />
           <NotificationBell />
         </div>
@@ -113,38 +111,38 @@ export default function RoomPage() {
 }
 
 const styles = {
-  page: { height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: "'DM Sans', sans-serif" },
+  page: { height: '100vh', display: 'flex', flexDirection: 'column', background: '#080A0F', fontFamily: "'DM Sans', sans-serif" },
   loading: {
     height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: 'var(--textMuted)', fontFamily: 'monospace', gap: 10, background: 'var(--bg)',
+    color: '#5A6380', fontFamily: 'monospace', gap: 10, background: '#080A0F',
   },
   header: {
     display: 'flex', alignItems: 'center', gap: 0,
     padding: '0 24px', borderBottom: '1px solid #1E2433',
     height: 56, flexShrink: 0, justifyContent: 'space-between',
-    background: 'var(--bg)',
+    background: '#0D1017',
   },
   left: { display: 'flex', alignItems: 'center', gap: 16 },
   backBtn: {
-    background: 'none', border: 'none', color: 'var(--textMuted)',
+    background: 'none', border: 'none', color: '#5A6380',
     cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', padding: '4px 0',
   },
-  divider: { width: 1, height: 20, background: 'var(--border)' },
-  roomName: { fontSize: 15, fontWeight: 600, color: 'var(--text)' },
+  divider: { width: 1, height: 20, background: '#1E2433' },
+  roomName: { fontSize: 15, fontWeight: 600, color: '#E8EBF2' },
   inviteBadge: {
     display: 'flex', alignItems: 'center', gap: 6,
-    background: 'var(--bgPanel)', border: '1px solid #1E2433',
+    background: '#0F1420', border: '1px solid #1E2433',
     padding: '4px 10px', fontSize: 12,
   },
-  inviteLabel: { color: 'var(--textMuted)' },
+  inviteLabel: { color: '#5A6380' },
   inviteCode: { fontFamily: 'monospace', color: '#00E5C3', fontWeight: 700 },
   copyBtn: {
-    background: 'none', border: 'none', color: 'var(--textMuted)',
+    background: 'none', border: 'none', color: '#5A6380',
     cursor: 'pointer', fontSize: 11, fontFamily: 'monospace', padding: 0,
   },
   tabs: { display: 'flex', gap: 4 },
   tab: {
-    background: 'none', border: 'none', color: 'var(--textMuted)',
+    background: 'none', border: 'none', color: '#5A6380',
     padding: '8px 16px', cursor: 'pointer', fontSize: 13,
     fontFamily: 'inherit', borderBottom: '2px solid transparent',
     transition: 'color 0.2s',

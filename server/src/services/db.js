@@ -4,9 +4,6 @@ const { Pool } = pg
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('localhost')
-    ? false
-    : { rejectUnauthorized: false },
 })
 
 // ─── Auto-migrate schema saat server start ────────────────
@@ -104,25 +101,6 @@ const SCHEMA = `
     position   INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW()
   );
-
-  CREATE TABLE IF NOT EXISTS messages (
-    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    room_id    UUID REFERENCES rooms(id) ON DELETE CASCADE,
-    user_id    UUID REFERENCES users(id) ON DELETE SET NULL,
-    user_name  VARCHAR(100) NOT NULL,
-    avatar_color VARCHAR(7) DEFAULT '#00E5C3',
-    content    TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-  );
-
-  CREATE TABLE IF NOT EXISTS task_reactions (
-    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    task_id    UUID REFERENCES tasks(id) ON DELETE CASCADE,
-    user_id    UUID REFERENCES users(id) ON DELETE CASCADE,
-    emoji      VARCHAR(10) NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
-    UNIQUE(task_id, user_id, emoji)
-  );
 `
 
 export async function connectDB() {
@@ -130,8 +108,7 @@ export async function connectDB() {
     await pool.query(SCHEMA)
     console.log('✅ PostgreSQL connected & schema migrated')
   } catch (err) {
-    console.error('❌ PostgreSQL connection failed:', err.message || err.code || JSON.stringify(err))
-    console.error('Full error:', err)
+    console.error('❌ PostgreSQL connection failed:', err.message)
     process.exit(1)
   }
 }

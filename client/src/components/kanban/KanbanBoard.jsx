@@ -4,14 +4,12 @@ import TaskCard from './TaskCard.jsx'
 import TaskModal from './TaskModal.jsx'
 import BoardToolbar from './BoardToolbar.jsx'
 import BoardStats from './BoardStats.jsx'
-import EmojiReactions from './EmojiReactions.jsx'
 import api from '../../lib/api.js'
 
 export default function KanbanBoard({ roomId }) {
   const [columns, setColumns] = useState([])
   const [tasks, setTasks] = useState([])
   const [logs, setLogs] = useState([])
-  const [reactions, setReactions] = useState({}) // { taskId: [{ emoji, count, users }] }
   const [members, setMembers] = useState([])
   const [selectedTask, setSelectedTask] = useState(null)
   const [addingCol, setAddingCol] = useState(false)
@@ -85,7 +83,7 @@ export default function KanbanBoard({ roomId }) {
       el.style.overflow = 'visible'
 
       const canvas = await html2canvas(el, {
-        backgroundColor: 'var(--bg)',
+        backgroundColor: '#080A0F',
         scale: 1.5,
         useCORS: true,
         logging: false,
@@ -118,70 +116,40 @@ export default function KanbanBoard({ roomId }) {
   }
 
   useEffect(() => {
-    if (!socket || !roomId) return
-
-    setColumns([])
-    setTasks([])
-    setLogs([])
+    if (!socket) return
+    socket.emit('board:get')
 
     const onLoaded = ({ columns, tasks, logs }) => {
       setColumns(columns)
       setTasks(tasks)
       setLogs(logs)
-      // Load reactions untuk semua tasks
-      if (tasks.length > 0) {
-        socket.emit('reactions:get', { taskIds: tasks.map(t => t.id) })
-      }
     }
-    const onReactionsLoaded = ({ reactions }) => setReactions(reactions)
-    const onReactionUpdated = ({ taskId, reactions: r }) =>
-      setReactions(p => ({ ...p, [taskId]: r }))
-    const onColumnAdded = ({ column }) => setColumns(p => [...p, column])
-    const onColumnUpdated = ({ column }) => setColumns(p => p.map(c => c.id === column.id ? column : c))
-    const onColumnDeleted = ({ id }) => {
-      setColumns(p => p.filter(c => c.id !== id))
-      setTasks(p => p.filter(t => t.column_id !== id))
-    }
-    const onTaskAdded = ({ task }) => setTasks(p => {
-      if (p.find(t => t.id === task.id)) return p
-      return [...p, task]
-    })
-    const onTaskUpdated = ({ task }) => setTasks(p => p.map(t => t.id === task.id ? { ...t, ...task } : t))
-    const onTaskMoved = ({ task }) => setTasks(p => p.map(t => t.id === task.id ? { ...t, ...task } : t))
-    const onTaskDeleted = ({ id }) => setTasks(p => p.filter(t => t.id !== id))
-    const onActivity = (log) => setLogs(p => [log, ...p].slice(0, 20))
 
     socket.on('board:loaded', onLoaded)
-    socket.on('column:added', onColumnAdded)
-    socket.on('column:updated', onColumnUpdated)
-    socket.on('column:deleted', onColumnDeleted)
-    socket.on('task:added', onTaskAdded)
-    socket.on('task:updated', onTaskUpdated)
-    socket.on('task:moved', onTaskMoved)
-    socket.on('task:deleted', onTaskDeleted)
-    socket.on('activity:new', onActivity)
-    socket.on('reactions:loaded', onReactionsLoaded)
-    socket.on('reaction:updated', onReactionUpdated)
-
-    const timer = setTimeout(() => {
-      socket.emit('board:get')
-    }, 300)
+    socket.on('column:added', ({ column }) => setColumns(p => [...p, column]))
+    socket.on('column:updated', ({ column }) => setColumns(p => p.map(c => c.id === column.id ? column : c)))
+    socket.on('column:deleted', ({ id }) => {
+      setColumns(p => p.filter(c => c.id !== id))
+      setTasks(p => p.filter(t => t.column_id !== id))
+    })
+    socket.on('task:added', ({ task }) => setTasks(p => [...p, task]))
+    socket.on('task:updated', ({ task }) => setTasks(p => p.map(t => t.id === task.id ? { ...t, ...task } : t)))
+    socket.on('task:moved', ({ task }) => setTasks(p => p.map(t => t.id === task.id ? { ...t, ...task } : t)))
+    socket.on('task:deleted', ({ id }) => setTasks(p => p.filter(t => t.id !== id)))
+    socket.on('activity:new', (log) => setLogs(p => [log, ...p].slice(0, 20)))
 
     return () => {
-      clearTimeout(timer)
       socket.off('board:loaded', onLoaded)
-      socket.off('column:added', onColumnAdded)
-      socket.off('column:updated', onColumnUpdated)
-      socket.off('column:deleted', onColumnDeleted)
-      socket.off('task:added', onTaskAdded)
-      socket.off('task:updated', onTaskUpdated)
-      socket.off('task:moved', onTaskMoved)
-      socket.off('task:deleted', onTaskDeleted)
-      socket.off('activity:new', onActivity)
-      socket.off('reactions:loaded', onReactionsLoaded)
-      socket.off('reaction:updated', onReactionUpdated)
+      socket.off('column:added')
+      socket.off('column:updated')
+      socket.off('column:deleted')
+      socket.off('task:added')
+      socket.off('task:updated')
+      socket.off('task:moved')
+      socket.off('task:deleted')
+      socket.off('activity:new')
     }
-  }, [socket, roomId])
+  }, [socket])
 
   // ─── Drag & Drop ──────────────────────────────────────
   const handleDragStart = (e, taskId, fromColId) => {
@@ -302,10 +270,6 @@ export default function KanbanBoard({ roomId }) {
                         task={task}
                         onClick={() => setSelectedTask(task)}
                       />
-                      <EmojiReactions
-                        taskId={task.id}
-                        reactions={reactions[task.id] || []}
-                      />
                     </div>
                   ))}
                 </div>
@@ -413,7 +377,7 @@ export default function KanbanBoard({ roomId }) {
 const styles = {
   wrap: {
     display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden',
-    background: 'var(--bg)',
+    background: '#080A0F',
   },
   inner: {
     display: 'flex', flex: 1, overflow: 'hidden',
@@ -424,7 +388,7 @@ const styles = {
   },
   column: {
     width: 280, flexShrink: 0,
-    background: 'var(--bgPanel)', border: '1px solid #1E2433',
+    background: '#0F1420', border: '1px solid #1E2433',
     display: 'flex', flexDirection: 'column',
     maxHeight: 'calc(100vh - 120px)',
     borderRadius: 2,
@@ -435,13 +399,13 @@ const styles = {
   },
   colLeft: { display: 'flex', alignItems: 'center', gap: 8 },
   colDot: { width: 8, height: 8, borderRadius: '50%' },
-  colTitle: { fontSize: 13, fontWeight: 600, color: 'var(--text)' },
+  colTitle: { fontSize: 13, fontWeight: 600, color: '#E8EBF2' },
   colCount: {
-    fontSize: 11, color: 'var(--textMuted)', background: 'var(--border)',
+    fontSize: 11, color: '#5A6380', background: '#1E2433',
     padding: '1px 6px', borderRadius: 10, fontFamily: 'monospace',
   },
   iconBtn: {
-    background: 'none', border: 'none', color: 'var(--textMuted)',
+    background: 'none', border: 'none', color: '#5A6380',
     cursor: 'pointer', fontSize: 12, padding: '2px 4px',
     transition: 'color 0.2s',
   },
@@ -454,50 +418,50 @@ const styles = {
   addTaskBtn: {
     margin: 12, padding: '8px 12px',
     background: 'none', border: '1px dashed #1E2433',
-    color: 'var(--textMuted)', cursor: 'pointer', fontSize: 12,
+    color: '#5A6380', cursor: 'pointer', fontSize: 12,
     fontFamily: 'inherit', transition: 'all 0.2s', textAlign: 'left',
   },
   addColWrap: { width: 280, flexShrink: 0 },
   addColForm: {
-    background: 'var(--bgPanel)', border: '1px solid #1E2433',
+    background: '#0F1420', border: '1px solid #1E2433',
     padding: 16,
   },
   addColBtn: {
     width: '100%', padding: '12px 16px',
     background: 'none', border: '1px dashed #1E2433',
-    color: 'var(--textMuted)', cursor: 'pointer', fontSize: 13,
+    color: '#5A6380', cursor: 'pointer', fontSize: 13,
     fontFamily: 'inherit', textAlign: 'left',
   },
   input: {
-    width: '100%', background: 'var(--bg)', border: '1px solid #1E2433',
-    color: 'var(--text)', padding: '8px 12px', fontSize: 13,
+    width: '100%', background: '#080A0F', border: '1px solid #1E2433',
+    color: '#E8EBF2', padding: '8px 12px', fontSize: 13,
     fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
   },
   btnAdd: {
-    background: '#00E5C3', color: 'var(--bg)', border: 'none',
+    background: '#00E5C3', color: '#080A0F', border: 'none',
     padding: '6px 14px', cursor: 'pointer', fontSize: 12,
     fontFamily: 'inherit', fontWeight: 700,
   },
   btnCancel: {
-    background: 'none', color: 'var(--textMuted)', border: '1px solid #1E2433',
+    background: 'none', color: '#5A6380', border: '1px solid #1E2433',
     padding: '6px 14px', cursor: 'pointer', fontSize: 12,
     fontFamily: 'inherit',
   },
   feed: {
     width: 260, flexShrink: 0, borderLeft: '1px solid #1E2433',
-    padding: 16, overflowY: 'auto', background: 'var(--bg)',
+    padding: 16, overflowY: 'auto', background: '#0D1017',
   },
   feedTitle: {
-    fontSize: 12, fontFamily: 'monospace', color: 'var(--textMuted)',
+    fontSize: 12, fontFamily: 'monospace', color: '#5A6380',
     letterSpacing: '0.1em', marginBottom: 16,
     display: 'flex', alignItems: 'center', gap: 6,
   },
-  feedEmpty: { fontSize: 12, color: 'var(--textMuted)', textAlign: 'center', marginTop: 40 },
+  feedEmpty: { fontSize: 12, color: '#5A6380', textAlign: 'center', marginTop: 40 },
   feedItem: {
     padding: '10px 0', borderBottom: '1px solid #1E2433',
     fontSize: 12, lineHeight: 1.6,
   },
   feedUser: { color: '#00E5C3', fontWeight: 600 },
-  feedAction: { color: 'var(--textMuted)' },
-  feedTime: { fontSize: 10, color: 'var(--textDim)', marginTop: 2, fontFamily: 'monospace' },
+  feedAction: { color: '#5A6380' },
+  feedTime: { fontSize: 10, color: '#3A4255', marginTop: 2, fontFamily: 'monospace' },
 }

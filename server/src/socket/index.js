@@ -3,8 +3,6 @@ import { handlePresence } from './handlers/presence.js'
 import { handleDocument } from './handlers/document.js'
 import { handleCanvas } from './handlers/canvas.js'
 import { handleKanban } from './handlers/kanban.js'
-import { handleChat } from './handlers/chat.js'
-import { handleReactions } from './handlers/reactions.js'
 import { presence } from '../services/redis.js'
 
 export function initSocket(io) {
@@ -50,8 +48,6 @@ export function initSocket(io) {
     handleDocument(io, socket)
     handleCanvas(io, socket)
     handleKanban(io, socket)
-    handleChat(io, socket)
-    handleReactions(io, socket)
 
     // ─── DISCONNECT ───────────────────────────────────────
     socket.on('disconnect', async () => {
