@@ -48,7 +48,7 @@ async function main() {
   await connectDB()
   await connectRedis()
 
-  httpServer.listen(PORT, () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`)
     console.log(`🔌 WebSocket ready`)
   })
