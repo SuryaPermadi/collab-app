@@ -105,7 +105,7 @@ export default function LoginPage() {
 const styles = {
   page: {
     minHeight: '100vh',
-    background: '#080A0F',
+    background: 'var(--bg)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -113,7 +113,7 @@ const styles = {
   },
   card: {
     width: 400,
-    background: '#0F1420',
+    background: 'var(--bgPanel)',
     border: '1px solid #1E2433',
     padding: '48px 40px',
   },
@@ -128,13 +128,13 @@ const styles = {
     fontFamily: 'monospace',
     fontSize: 18,
     fontWeight: 700,
-    color: '#E8EBF2',
+    color: 'var(--text)',
     letterSpacing: '0.05em',
   },
   title: {
     fontSize: 22,
     fontWeight: 700,
-    color: '#E8EBF2',
+    color: 'var(--text)',
     marginBottom: 24,
   },
   error: {
@@ -147,11 +147,11 @@ const styles = {
   },
   form: { display: 'flex', flexDirection: 'column', gap: 16 },
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
-  label: { fontSize: 12, color: '#5A6380', letterSpacing: '0.05em' },
+  label: { fontSize: 12, color: 'var(--textMuted)', letterSpacing: '0.05em' },
   input: {
-    background: '#080A0F',
+    background: 'var(--bg)',
     border: '1px solid #1E2433',
-    color: '#E8EBF2',
+    color: 'var(--text)',
     padding: '12px 14px',
     fontSize: 14,
     outline: 'none',
@@ -160,7 +160,7 @@ const styles = {
   },
   btn: {
     background: '#00E5C3',
-    color: '#080A0F',
+    color: 'var(--bg)',
     border: 'none',
     padding: '14px',
     fontSize: 14,
@@ -170,7 +170,7 @@ const styles = {
     fontFamily: 'inherit',
     letterSpacing: '0.05em',
   },
-  toggle: { marginTop: 24, textAlign: 'center', fontSize: 13, color: '#5A6380' },
+  toggle: { marginTop: 24, textAlign: 'center', fontSize: 13, color: 'var(--textMuted)' },
   link: {
     background: 'none',
     border: 'none',

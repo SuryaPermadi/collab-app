@@ -45,14 +45,14 @@ const styles = {
   toolbar: {
     display: 'flex', alignItems: 'center', gap: 2,
     padding: '8px 16px', borderBottom: '1px solid #1E2433',
-    background: '#0F1420',
+    background: 'var(--bgPanel)',
   },
   btn: {
-    background: 'none', border: 'none', color: '#5A6380',
+    background: 'none', border: 'none', color: 'var(--textMuted)',
     width: 36, height: 36, cursor: 'pointer', fontSize: 16,
     borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
     transition: 'background 0.15s, color 0.15s',
   },
-  btnActive: { background: '#1E2433', color: '#00E5C3' },
-  divider: { width: 1, height: 24, background: '#1E2433', margin: '0 4px' },
+  btnActive: { background: 'var(--border)', color: '#00E5C3' },
+  divider: { width: 1, height: 24, background: 'var(--border)', margin: '0 4px' },
 }

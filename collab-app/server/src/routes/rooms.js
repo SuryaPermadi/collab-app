@@ -109,6 +109,23 @@ router.post('/join', authRequired, async (req, res) => {
   }
 })
 
+// ─── GET /api/rooms/:id/members — Daftar member room ─────
+router.get('/:id/members', async (req, res) => {
+  try {
+    const members = await db.findMany(
+      `SELECT u.id, u.name, u.avatar_color, rm.role
+       FROM room_members rm
+       JOIN users u ON rm.user_id = u.id
+       WHERE rm.room_id = $1
+       ORDER BY rm.role DESC, u.name ASC`,
+      [req.params.id]
+    )
+    res.json(members)
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 // ─── DELETE /api/rooms/:id — Hapus room ──────────────────
 router.delete('/:id', authRequired, async (req, res) => {
   try {

@@ -5,8 +5,12 @@ import { useRoomStore } from '../stores/index.js'
 import { useAuthStore } from '../stores/index.js'
 import api from '../lib/api.js'
 import PresenceBar from '../components/shared/PresenceBar.jsx'
+import NotificationBell from '../components/shared/NotificationBell.jsx'
+import ThemeToggle from '../components/shared/ThemeToggle.jsx'
 import CollabEditor from '../components/editor/CollabEditor.jsx'
 import CollabCanvas from '../components/canvas/CollabCanvas.jsx'
+import KanbanBoard from '../components/kanban/KanbanBoard.jsx'
+import { useNotifications } from '../hooks/useNotifications.js'
 
 export default function RoomPage() {
   const { roomId } = useParams()
@@ -17,6 +21,9 @@ export default function RoomPage() {
   const { joinRoom } = useSocket()
   const { activeTab, setActiveTab } = useRoomStore()
   const user = useAuthStore(s => s.user)
+
+  // Aktifkan sistem notifikasi
+  useNotifications()
 
   useEffect(() => {
     async function init() {
@@ -67,6 +74,12 @@ export default function RoomPage() {
 
         <div style={styles.tabs}>
           <button
+            style={{ ...styles.tab, ...(activeTab === 'board' ? styles.tabActive : {}) }}
+            onClick={() => setActiveTab('board')}
+          >
+            🗂 Board
+          </button>
+          <button
             style={{ ...styles.tab, ...(activeTab === 'editor' ? styles.tabActive : {}) }}
             onClick={() => setActiveTab('editor')}
           >
@@ -81,10 +94,15 @@ export default function RoomPage() {
         </div>
 
         <PresenceBar />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <ThemeToggle />
+          <NotificationBell />
+        </div>
       </header>
 
       {/* Content */}
       <div style={styles.content}>
+        {activeTab === 'board' && <KanbanBoard roomId={roomId} />}
         {activeTab === 'editor' && <CollabEditor roomId={roomId} />}
         {activeTab === 'canvas' && <CollabCanvas roomId={roomId} />}
       </div>
@@ -93,38 +111,38 @@ export default function RoomPage() {
 }
 
 const styles = {
-  page: { height: '100vh', display: 'flex', flexDirection: 'column', background: '#080A0F', fontFamily: "'DM Sans', sans-serif" },
+  page: { height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: "'DM Sans', sans-serif" },
   loading: {
     height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#5A6380', fontFamily: 'monospace', gap: 10, background: '#080A0F',
+    color: 'var(--textMuted)', fontFamily: 'monospace', gap: 10, background: 'var(--bg)',
   },
   header: {
     display: 'flex', alignItems: 'center', gap: 0,
     padding: '0 24px', borderBottom: '1px solid #1E2433',
     height: 56, flexShrink: 0, justifyContent: 'space-between',
-    background: '#0D1017',
+    background: 'var(--bg)',
   },
   left: { display: 'flex', alignItems: 'center', gap: 16 },
   backBtn: {
-    background: 'none', border: 'none', color: '#5A6380',
+    background: 'none', border: 'none', color: 'var(--textMuted)',
     cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', padding: '4px 0',
   },
-  divider: { width: 1, height: 20, background: '#1E2433' },
-  roomName: { fontSize: 15, fontWeight: 600, color: '#E8EBF2' },
+  divider: { width: 1, height: 20, background: 'var(--border)' },
+  roomName: { fontSize: 15, fontWeight: 600, color: 'var(--text)' },
   inviteBadge: {
     display: 'flex', alignItems: 'center', gap: 6,
-    background: '#0F1420', border: '1px solid #1E2433',
+    background: 'var(--bgPanel)', border: '1px solid #1E2433',
     padding: '4px 10px', fontSize: 12,
   },
-  inviteLabel: { color: '#5A6380' },
+  inviteLabel: { color: 'var(--textMuted)' },
   inviteCode: { fontFamily: 'monospace', color: '#00E5C3', fontWeight: 700 },
   copyBtn: {
-    background: 'none', border: 'none', color: '#5A6380',
+    background: 'none', border: 'none', color: 'var(--textMuted)',
     cursor: 'pointer', fontSize: 11, fontFamily: 'monospace', padding: 0,
   },
   tabs: { display: 'flex', gap: 4 },
   tab: {
-    background: 'none', border: 'none', color: '#5A6380',
+    background: 'none', border: 'none', color: 'var(--textMuted)',
     padding: '8px 16px', cursor: 'pointer', fontSize: 13,
     fontFamily: 'inherit', borderBottom: '2px solid transparent',
     transition: 'color 0.2s',

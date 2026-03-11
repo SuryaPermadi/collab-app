@@ -33,7 +33,7 @@ export default function PresenceBar() {
         ))}
 
         {extra > 0 && (
-          <div style={{ ...styles.avatar, background: '#1E2433', color: '#5A6380', marginLeft: -8 }}>
+          <div style={{ ...styles.avatar, background: 'var(--border)', color: 'var(--textMuted)', marginLeft: -8 }}>
             +{extra}
           </div>
         )}
@@ -51,12 +51,12 @@ const styles = {
     boxShadow: '0 0 0 3px rgba(0,229,195,0.2)',
     animation: 'pulse 2s infinite',
   },
-  count: { fontSize: 11, color: '#5A6380', fontFamily: 'monospace' },
+  count: { fontSize: 11, color: 'var(--textMuted)', fontFamily: 'monospace' },
   avatars: { display: 'flex', alignItems: 'center' },
   avatar: {
     width: 28, height: 28, borderRadius: '50%',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 11, fontWeight: 700, color: '#080A0F',
+    fontSize: 11, fontWeight: 700, color: 'var(--bg)',
     cursor: 'default', position: 'relative',
     transition: 'transform 0.2s',
   },

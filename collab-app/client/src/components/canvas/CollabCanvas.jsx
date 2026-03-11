@@ -6,7 +6,6 @@ import { useAuthStore } from '../../stores/index.js'
 import { useRoomStore } from '../../stores/index.js'
 import CanvasToolbar from './CanvasToolbar.jsx'
 import LiveCursors from './LiveCursors.jsx'
-
 export default function CollabCanvas({ roomId }) {
   const [shapes, setShapes] = useState([])
   const [tool, setTool] = useState('select') // select | rect | circle | arrow | text | pen
@@ -105,9 +104,9 @@ export default function CollabCanvas({ roomId }) {
   const addShape = useCallback((type, x, y) => {
     const id = uuidv4()
     const defaults = {
-      rect: { width: 120, height: 80, fill: '#1E2433', stroke: '#00E5C3', strokeWidth: 1 },
-      circle: { radius: 50, fill: '#1E2433', stroke: '#7B61FF', strokeWidth: 1 },
-      text: { text: 'Teks', fontSize: 18, fill: '#E8EBF2' },
+      rect: { width: 120, height: 80, fill: 'var(--border)', stroke: '#00E5C3', strokeWidth: 1 },
+      circle: { radius: 50, fill: 'var(--border)', stroke: '#7B61FF', strokeWidth: 1 },
+      text: { text: 'Teks', fontSize: 18, fill: 'var(--text)' },
     }
 
     const shape = {
@@ -226,6 +225,9 @@ export default function CollabCanvas({ roomId }) {
       id: shape.id,
       x: shape.x,
       y: shape.y,
+      scaleX: shape.scaleX || 1,
+      scaleY: shape.scaleY || 1,
+      rotation: shape.rotation || 0,
       draggable: tool === 'select',
       onClick: () => tool === 'select' && setSelectedId(shape.id),
       onDragMove: (e) => handleDragMove(e, shape.id),
@@ -265,20 +267,11 @@ export default function CollabCanvas({ roomId }) {
             <Transformer ref={transformerRef} />
           </Layer>
 
-          {/* Live cursors layer */}
-          <Layer listening={false}>
-            {Object.entries(cursors).map(([uid, cur]) => (
-              <Text
-                key={uid}
-                x={cur.x + 10} y={cur.y + 10}
-                text={cur.name}
-                fontSize={11}
-                fill={cur.avatarColor}
-                fontFamily="monospace"
-              />
-            ))}
-          </Layer>
+          {/* Live cursors Konva layer dihapus, diganti HTML overlay di bawah */}
         </Stage>
+
+        {/* Live cursors HTML overlay */}
+        <LiveCursors cursors={cursors} currentUserId={user?.id} />
 
         {/* Hint */}
         {tool !== 'select' && (
@@ -292,11 +285,11 @@ export default function CollabCanvas({ roomId }) {
 }
 
 const styles = {
-  wrap: { display: 'flex', flexDirection: 'column', height: '100%', background: '#080A0F' },
+  wrap: { display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' },
   canvasWrap: { flex: 1, position: 'relative', overflow: 'hidden' },
   hint: {
     position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)',
-    background: '#0F1420', border: '1px solid #1E2433', color: '#5A6380',
+    background: 'var(--bgPanel)', border: '1px solid #1E2433', color: 'var(--textMuted)',
     padding: '8px 16px', fontSize: 12, fontFamily: 'monospace', pointerEvents: 'none',
   },
 }

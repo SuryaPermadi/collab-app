@@ -14,6 +14,7 @@
     "socket.io-client": "^4.7.2",
     "yjs": "^13.6.10",
     "y-websocket": "^1.5.1",
+    "y-prosemirror": "^1.2.5",
     "@tiptap/react": "^2.1.13",
     "@tiptap/pm": "^2.1.13",
     "@tiptap/starter-kit": "^2.1.13",
@@ -27,7 +28,9 @@
     "react-konva": "^18.2.10",
     "zustand": "^4.4.6",
     "uuid": "^9.0.0",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.1.1",

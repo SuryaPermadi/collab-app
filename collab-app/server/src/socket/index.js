@@ -2,6 +2,7 @@ import { socketAuth } from '../middleware/auth.js'
 import { handlePresence } from './handlers/presence.js'
 import { handleDocument } from './handlers/document.js'
 import { handleCanvas } from './handlers/canvas.js'
+import { handleKanban } from './handlers/kanban.js'
 import { presence } from '../services/redis.js'
 
 export function initSocket(io) {
@@ -46,6 +47,7 @@ export function initSocket(io) {
     handlePresence(io, socket)
     handleDocument(io, socket)
     handleCanvas(io, socket)
+    handleKanban(io, socket)
 
     // ─── DISCONNECT ───────────────────────────────────────
     socket.on('disconnect', async () => {

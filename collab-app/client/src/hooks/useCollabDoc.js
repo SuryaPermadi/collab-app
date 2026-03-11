@@ -10,42 +10,40 @@ export function useCollabDoc(roomId) {
   useEffect(() => {
     if (!roomId || !socket) return
 
-    // Buat Yjs document baru
     const ydoc = new Y.Doc()
     ydocRef.current = ydoc
 
-    // ─── Minta state dokumen dari server ──────────────
-    socket.emit('doc:get')
-
-    // ─── Terima state awal dari server ────────────────
     const onLoaded = ({ update }) => {
-      const updateBuffer = new Uint8Array(update)
-      Y.applyUpdate(ydoc, updateBuffer)
+      if (update && update.length > 0) {
+        Y.applyUpdate(ydoc, new Uint8Array(update))
+      }
       setIsReady(true)
     }
 
-    // ─── Terima update dari user lain ─────────────────
     const onUpdate = ({ update }) => {
-      const updateBuffer = new Uint8Array(update)
-      Y.applyUpdate(ydoc, updateBuffer)
+      if (update && update.length > 0) {
+        Y.applyUpdate(ydoc, new Uint8Array(update), 'remote')
+      }
     }
 
     socket.on('doc:loaded', onLoaded)
     socket.on('doc:update', onUpdate)
 
-    // ─── Kirim update ke server saat dokumen berubah ──
     const handleDocChange = (update, origin) => {
-      // Hanya kirim jika perubahan bukan dari socket (origin bukan 'remote')
       if (origin !== 'remote') {
-        socket.emit('doc:update', {
-          update: Array.from(update),
-        })
+        socket.emit('doc:update', { update: Array.from(update) })
       }
     }
-
     ydoc.on('update', handleDocChange)
 
+    // Tunggu 300ms agar room:join selesai di server dulu
+    // baru kirim doc:get supaya socket.roomId sudah ter-set
+    const timer = setTimeout(() => {
+      socket.emit('doc:get')
+    }, 300)
+
     return () => {
+      clearTimeout(timer)
       socket.off('doc:loaded', onLoaded)
       socket.off('doc:update', onUpdate)
       ydoc.off('update', handleDocChange)

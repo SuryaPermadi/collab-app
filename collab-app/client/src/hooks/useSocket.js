@@ -15,7 +15,7 @@ export function useSocket() {
     if (initialized.current) return
     initialized.current = true
 
-    socketInstance = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001', {
+    socketInstance = io('http://localhost:3001', {
       auth: token
         ? { token }
         : { guestName: `Guest_${Math.floor(Math.random() * 1000)}` },
@@ -49,6 +49,10 @@ export function useSocket() {
     })
 
     socketInstance.on('cursor:moved', ({ userId, name, avatarColor, x, y }) => {
+      updateCursor(userId, { name, avatarColor, x, y })
+    })
+
+    socketInstance.on('canvas:cursor:moved', ({ userId, name, avatarColor, x, y }) => {
       updateCursor(userId, { name, avatarColor, x, y })
     })
 

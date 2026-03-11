@@ -1,6 +1,18 @@
 import { presence } from '../../services/redis.js'
 
 export function handlePresence(io, socket) {
+  // ─── Cursor untuk canvas/editor (HTML overlay) ────────
+  socket.on('canvas:cursor', ({ x, y }) => {
+    const roomId = socket.roomId
+    if (!roomId) return
+    socket.to(roomId).emit('canvas:cursor:moved', {
+      userId: socket.user.id,
+      name: socket.user.name,
+      avatarColor: socket.user.avatarColor,
+      x, y,
+    })
+  })
+
   // ─── Update posisi cursor di editor ──────────────────
   socket.on('cursor:move', ({ x, y, page }) => {
     const roomId = socket.roomId

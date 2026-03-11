@@ -104,16 +104,16 @@ const styles = {
   toolbar: {
     display: 'flex', alignItems: 'center', gap: 2,
     padding: '8px 16px', borderBottom: '1px solid #1E2433',
-    background: '#0F1420', flexWrap: 'wrap',
+    background: 'var(--bgPanel)', flexWrap: 'wrap',
   },
   btn: {
-    background: 'none', border: 'none', color: '#5A6380',
+    background: 'none', border: 'none', color: 'var(--textMuted)',
     padding: '6px 10px', cursor: 'pointer', fontSize: 13,
     fontFamily: 'inherit', fontWeight: 700, borderRadius: 2,
     transition: 'background 0.15s, color 0.15s', minWidth: 32,
   },
   btnActive: {
-    background: '#1E2433', color: '#00E5C3',
+    background: 'var(--border)', color: '#00E5C3',
   },
-  divider: { width: 1, height: 20, background: '#1E2433', margin: '0 4px' },
+  divider: { width: 1, height: 20, background: 'var(--border)', margin: '0 4px' },
 }
