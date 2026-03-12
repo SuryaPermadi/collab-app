@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useUser, useClerk } from '@clerk/clerk-react'
+import { useUser, useClerk, useAuth } from '@clerk/clerk-react'
 import api from '../lib/api.js'
 
 export default function DashboardPage() {
@@ -13,14 +13,17 @@ export default function DashboardPage() {
 
   const { user } = useUser()
   const { signOut } = useClerk()
+  const { getToken } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchRooms()
-  }, [])
+    if (user) fetchRooms()
+  }, [user])
 
   async function fetchRooms() {
     try {
+      const token = await getToken()
+      window.__clerk_token = token
       const { data } = await api.get('/rooms')
       setRooms(data)
     } finally {
