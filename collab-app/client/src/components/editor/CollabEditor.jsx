@@ -8,13 +8,14 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import * as Y from 'yjs'
 import { getSocket } from '../../hooks/useSocket.js'
-import { useAuthStore, useRoomStore } from '../../stores/index.js'
+import { useRoomStore } from '../../stores/index.js'
+import { useClerkUser } from '../../hooks/useClerkUser.js'
 import EditorToolbar from './EditorToolbar.jsx'
 import LiveCursors from '../canvas/LiveCursors.jsx'
 
 export default function CollabEditor({ roomId }) {
   const socket = getSocket()
-  const user = useAuthStore(s => s.user)
+  const { user } = useClerkUser()
   const cursors = useRoomStore(s => s.cursors)
   const ydocRef = useRef(new Y.Doc())
   const editorRef = useRef(null)

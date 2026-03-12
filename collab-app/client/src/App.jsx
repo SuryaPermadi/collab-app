@@ -1,26 +1,28 @@
-import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useAuthStore } from './stores/index.js'
-import LoginPage from './pages/LoginPage.jsx'
+import { useAuth, RedirectToSignIn } from '@clerk/clerk-react'
+import ClerkTokenProvider from './components/shared/ClerkTokenProvider.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import RoomPage from './pages/RoomPage.jsx'
 
 function ProtectedRoute({ children }) {
-  const token = useAuthStore(s => s.token)
-  return token ? children : <Navigate to="/login" replace />
+  const { isLoaded, isSignedIn } = useAuth()
+  if (!isLoaded) return (
+    <div style={{
+      height: '100vh', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', background: '#080A0F',
+      color: '#00E5C3', fontFamily: 'monospace', fontSize: 14,
+    }}>
+      Loading...
+    </div>
+  )
+  if (!isSignedIn) return <RedirectToSignIn />
+  return <ClerkTokenProvider>{children}</ClerkTokenProvider>
 }
 
 export default function App() {
-  const initToken = useAuthStore(s => s.initToken)
-
-  useEffect(() => {
-    initToken() // Pasang token ke axios header saat app load
-  }, [])
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={
           <ProtectedRoute>
             <DashboardPage />
@@ -31,6 +33,7 @@ export default function App() {
             <RoomPage />
           </ProtectedRoute>
         } />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

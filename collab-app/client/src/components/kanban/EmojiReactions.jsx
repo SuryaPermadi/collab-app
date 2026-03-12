@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { getSocket } from '../../hooks/useSocket.js'
-import { useAuthStore } from '../../stores/index.js'
+import { useClerkUser } from '../../hooks/useClerkUser.js'
 
 const EMOJI_OPTIONS = ['👍', '❤️', '🔥', '✅', '😂', '🎉', '👀', '⚡']
 
 export default function EmojiReactions({ taskId, reactions = [] }) {
     const [showPicker, setShowPicker] = useState(false)
     const socket = getSocket()
-    const user = useAuthStore(s => s.user)
+    const { user } = useClerkUser()
 
     const toggle = (emoji) => {
         socket?.emit('reaction:toggle', { taskId, emoji })

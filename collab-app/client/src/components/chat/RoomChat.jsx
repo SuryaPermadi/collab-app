@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getSocket } from '../../hooks/useSocket.js'
-import { useAuthStore } from '../../stores/index.js'
+import { useClerkUser } from '../../hooks/useClerkUser.js'
 
 export default function RoomChat({ roomId }) {
     const [messages, setMessages] = useState([])
@@ -11,7 +11,7 @@ export default function RoomChat({ roomId }) {
     const bottomRef = useRef(null)
     const typingTimer = useRef(null)
     const socket = getSocket()
-    const user = useAuthStore(s => s.user)
+    const { user } = useClerkUser()
 
     useEffect(() => {
         if (!socket || !roomId) return

@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
 import { useNotifStore } from '../stores/notifStore.js'
-import { useAuthStore } from '../stores/index.js'
+import { useClerkUser } from './useClerkUser.js'
 import { getSocket } from './useSocket.js'
 
 export function useNotifications() {
     const { addNotif } = useNotifStore()
-    const user = useAuthStore(s => s.user)
+    const { user } = useClerkUser()
     const socket = getSocket()
 
     // Minta izin browser notification

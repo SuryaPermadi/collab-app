@@ -1,9 +1,9 @@
 import { useRoomStore } from '../../stores/index.js'
-import { useAuthStore } from '../../stores/index.js'
+import { useClerkUser } from '../../hooks/useClerkUser.js'
 
 export default function PresenceBar() {
   const onlineUsers = useRoomStore(s => s.onlineUsers)
-  const currentUser = useAuthStore(s => s.user)
+  const { user: currentUser } = useClerkUser()
 
   // Batasi tampilan max 5 avatar, sisanya "+N"
   const MAX_VISIBLE = 5

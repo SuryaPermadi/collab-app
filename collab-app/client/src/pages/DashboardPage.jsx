@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../stores/index.js'
+import { useUser, useClerk } from '@clerk/clerk-react'
 import api from '../lib/api.js'
 
 export default function DashboardPage() {
@@ -11,7 +11,8 @@ export default function DashboardPage() {
   const [inviteCode, setInviteCode] = useState('')
   const [loading, setLoading] = useState(true)
 
-  const { user, logout } = useAuthStore()
+  const { user } = useUser()
+  const { signOut } = useClerk()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -65,7 +66,7 @@ export default function DashboardPage() {
             {user?.name?.[0]?.toUpperCase()}
           </div>
           <span style={styles.userName}>{user?.name}</span>
-          <button onClick={logout} style={styles.logoutBtn}>Keluar</button>
+          <button onClick={() => signOut()} style={styles.logoutBtn}>Keluar</button>
         </div>
       </header>
 

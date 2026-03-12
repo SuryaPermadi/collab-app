@@ -1,60 +1,53 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { io } from 'socket.io-client'
-import { useAuthStore, useRoomStore } from '../stores/index.js'
+import { useAuth, useUser } from '@clerk/clerk-react'
+import { useRoomStore } from '../stores/index.js'
 
 let socketInstance = null
 
 export function useSocket() {
-  const token = useAuthStore(s => s.token)
-  const user = useAuthStore(s => s.user)
+  const { getToken } = useAuth()
+  const { user } = useUser()
   const { setOnlineUsers, addUser, removeUser, updateCursor } = useRoomStore()
   const initialized = useRef(false)
 
-  // Inisialisasi socket sekali saja
   useEffect(() => {
-    if (initialized.current) return
+    if (initialized.current || !user) return
     initialized.current = true
 
-    socketInstance = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001', {
-      auth: token
-        ? { token }
-        : { guestName: `Guest_${Math.floor(Math.random() * 1000)}` },
-      transports: ['websocket'],
-      autoConnect: true,
-    })
+    const initSocket = async () => {
+      const token = await getToken()
 
-    socketInstance.on('connect', () => {
-      console.log('✅ Socket connected:', socketInstance.id)
-    })
+      socketInstance = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001', {
+        auth: { token },
+        transports: ['websocket'],
+        autoConnect: true,
+      })
 
-    socketInstance.on('disconnect', () => {
-      console.log('❌ Socket disconnected')
-    })
+      socketInstance.on('connect', () => {
+        console.log('✅ Socket connected:', socketInstance.id)
+      })
 
-    socketInstance.on('connect_error', (err) => {
-      console.error('Socket error:', err.message)
-    })
+      socketInstance.on('disconnect', () => {
+        console.log('❌ Socket disconnected')
+      })
 
-    // ─── Presence Events ────────────────────────────────
-    socketInstance.on('room:state', ({ users }) => {
-      setOnlineUsers(users)
-    })
+      socketInstance.on('connect_error', (err) => {
+        console.error('Socket error:', err.message)
+      })
 
-    socketInstance.on('user:joined', (userData) => {
-      addUser(userData)
-    })
+      socketInstance.on('room:state', ({ users }) => setOnlineUsers(users))
+      socketInstance.on('user:joined', (userData) => addUser(userData))
+      socketInstance.on('user:left', ({ id }) => removeUser(id))
+      socketInstance.on('cursor:moved', ({ userId, name, avatarColor, x, y }) => {
+        updateCursor(userId, { name, avatarColor, x, y })
+      })
+      socketInstance.on('canvas:cursor:moved', ({ userId, name, avatarColor, x, y }) => {
+        updateCursor(userId, { name, avatarColor, x, y })
+      })
+    }
 
-    socketInstance.on('user:left', ({ id }) => {
-      removeUser(id)
-    })
-
-    socketInstance.on('cursor:moved', ({ userId, name, avatarColor, x, y }) => {
-      updateCursor(userId, { name, avatarColor, x, y })
-    })
-
-    socketInstance.on('canvas:cursor:moved', ({ userId, name, avatarColor, x, y }) => {
-      updateCursor(userId, { name, avatarColor, x, y })
-    })
+    initSocket()
 
     return () => {
       if (socketInstance) {
@@ -63,7 +56,7 @@ export function useSocket() {
         initialized.current = false
       }
     }
-  }, [])
+  }, [user])
 
   const joinRoom = useCallback((roomId) => {
     socketInstance?.emit('room:join', { roomId })
@@ -85,7 +78,6 @@ export function useSocket() {
   return { socket: socketInstance, joinRoom, emit, on, off }
 }
 
-// Export socket instance untuk dipakai di luar hook
 export function getSocket() {
   return socketInstance
 }

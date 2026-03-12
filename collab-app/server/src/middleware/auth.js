@@ -1,59 +1,59 @@
-import jwt from 'jsonwebtoken'
-import { db } from '../services/db.js'
+import { createClerkClient } from '@clerk/backend'
+
+const clerk = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY,
+})
+
+function randomColor() {
+  const colors = ['#00E5C3', '#FF4D6D', '#7B61FF', '#FFB347', '#4FC3F7', '#81C784']
+  return colors[Math.floor(Math.random() * colors.length)]
+}
 
 // ─── REST middleware ──────────────────────────────────────
-export function authRequired(req, res, next) {
+export async function authRequired(req, res, next) {
   const header = req.headers.authorization
   if (!header?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Token tidak ditemukan' })
   }
 
-  const token = header.split(' ')[1]
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET)
-    req.user = payload
+    const token = header.split(' ')[1]
+    const payload = await clerk.verifyToken(token)
+    req.user = {
+      id: payload.sub,
+      clerkId: payload.sub,
+    }
     next()
-  } catch {
-    return res.status(401).json({ error: 'Token tidak valid atau sudah expired' })
+  } catch (err) {
+    return res.status(401).json({ error: 'Token tidak valid: ' + err.message })
   }
 }
 
 // ─── Socket.io middleware ─────────────────────────────────
-// Verifikasi token saat WebSocket handshake
 export async function socketAuth(socket, next) {
   try {
     const token = socket.handshake.auth?.token
 
-    // Guest mode: tidak perlu token, cukup nama
     if (!token) {
-      const guestName = socket.handshake.auth?.guestName
-      if (!guestName) {
-        return next(new Error('Token atau nama guest wajib diisi'))
-      }
-
-      socket.user = {
-        id: `guest_${socket.id}`,
-        name: guestName,
-        isGuest: true,
-        avatarColor: randomColor(),
-      }
-      return next()
+      return next(new Error('Token wajib diisi'))
     }
 
-    // Authenticated user
-    const payload = jwt.verify(token, process.env.JWT_SECRET)
-    const user = await db.findOne(
-      'SELECT id, name, email, avatar_color FROM users WHERE id = $1',
-      [payload.userId]
-    )
+    const payload = await clerk.verifyToken(token)
 
-    if (!user) return next(new Error('User tidak ditemukan'))
+    // Ambil data user dari Clerk
+    const clerkUser = await clerk.users.getUser(payload.sub)
+
+    const name = clerkUser.firstName
+      ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`.trim()
+      : clerkUser.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'User'
 
     socket.user = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      avatarColor: user.avatar_color,
+      id: payload.sub,
+      clerkId: payload.sub,
+      name,
+      email: clerkUser.emailAddresses?.[0]?.emailAddress,
+      avatarColor: randomColor(),
+      imageUrl: clerkUser.imageUrl,
       isGuest: false,
     }
 
@@ -61,9 +61,4 @@ export async function socketAuth(socket, next) {
   } catch (err) {
     next(new Error('Autentikasi gagal: ' + err.message))
   }
-}
-
-function randomColor() {
-  const colors = ['#00E5C3', '#FF4D6D', '#7B61FF', '#FFB347', '#4FC3F7', '#81C784']
-  return colors[Math.floor(Math.random() * colors.length)]
 }

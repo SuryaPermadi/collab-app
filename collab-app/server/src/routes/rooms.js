@@ -17,7 +17,7 @@ router.post('/', authRequired, async (req, res) => {
       `INSERT INTO rooms (name, owner_id, invite_code)
        VALUES ($1, $2, $3)
        RETURNING *`,
-      [name, req.user.userId, inviteCode]
+      [name, req.user.id, inviteCode]
     )
 
     // Buat dokumen kosong untuk room ini
@@ -29,7 +29,7 @@ router.post('/', authRequired, async (req, res) => {
     // Owner otomatis jadi member
     await db.query(
       `INSERT INTO room_members (room_id, user_id, role) VALUES ($1, $2, 'owner')`,
-      [room.id, req.user.userId]
+      [room.id, req.user.id]
     )
 
     res.status(201).json(room)
@@ -49,7 +49,7 @@ router.get('/', authRequired, async (req, res) => {
        JOIN room_members rm ON r.id = rm.room_id
        WHERE rm.user_id = $1
        ORDER BY r.created_at DESC`,
-      [req.user.userId]
+      [req.user.id]
     )
     res.json(rooms)
   } catch (err) {
@@ -93,13 +93,13 @@ router.post('/join', authRequired, async (req, res) => {
     // Cek sudah member atau belum
     const existing = await db.findOne(
       'SELECT * FROM room_members WHERE room_id = $1 AND user_id = $2',
-      [room.id, req.user.userId]
+      [room.id, req.user.id]
     )
 
     if (!existing) {
       await db.query(
         `INSERT INTO room_members (room_id, user_id, role) VALUES ($1, $2, 'editor')`,
-        [room.id, req.user.userId]
+        [room.id, req.user.id]
       )
     }
 
@@ -131,7 +131,7 @@ router.delete('/:id', authRequired, async (req, res) => {
   try {
     const room = await db.findOne(
       'SELECT * FROM rooms WHERE id = $1 AND owner_id = $2',
-      [req.params.id, req.user.userId]
+      [req.params.id, req.user.id]
     )
 
     if (!room) return res.status(403).json({ error: 'Forbidden' })

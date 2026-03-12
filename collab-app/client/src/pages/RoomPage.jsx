@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSocket } from '../hooks/useSocket.js'
 import { useRoomStore } from '../stores/index.js'
-import { useAuthStore } from '../stores/index.js'
+import { useUser } from '@clerk/clerk-react'
 import api from '../lib/api.js'
 import PresenceBar from '../components/shared/PresenceBar.jsx'
 import NotificationBell from '../components/shared/NotificationBell.jsx'
@@ -21,7 +21,7 @@ export default function RoomPage() {
 
   const { joinRoom } = useSocket()
   const { activeTab, setActiveTab } = useRoomStore()
-  const user = useAuthStore(s => s.user)
+  const { user } = useUser()
 
   // Aktifkan sistem notifikasi
   useNotifications()
@@ -94,10 +94,10 @@ export default function RoomPage() {
           </button>
         </div>
 
+        <PresenceBar />
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <PresenceBar />
-          <RoomChat roomId={roomId} />
           <ThemeToggle />
+          <RoomChat roomId={roomId} />
           <NotificationBell />
         </div>
       </header>

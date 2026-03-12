@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { Stage, Layer, Rect, Circle, Line, Text, Transformer, Arrow } from 'react-konva'
 import { v4 as uuidv4 } from 'uuid'
 import { getSocket } from '../../hooks/useSocket.js'
-import { useAuthStore } from '../../stores/index.js'
+import { useClerkUser } from '../../hooks/useClerkUser.js'
 import { useRoomStore } from '../../stores/index.js'
 import CanvasToolbar from './CanvasToolbar.jsx'
 import LiveCursors from './LiveCursors.jsx'
@@ -20,7 +20,7 @@ export default function CollabCanvas({ roomId }) {
   const transformerRef = useRef(null)
   const containerRef = useRef(null)
   const socket = getSocket()
-  const user = useAuthStore(s => s.user)
+  const { user } = useClerkUser()
   const cursors = useRoomStore(s => s.cursors)
 
   // Update stage size saat container resize
