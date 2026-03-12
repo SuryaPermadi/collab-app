@@ -3,6 +3,8 @@ import { useAuth, RedirectToSignIn } from '@clerk/clerk-react'
 import ClerkTokenProvider from './components/shared/ClerkTokenProvider.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import RoomPage from './pages/RoomPage.jsx'
+import SignInPage from './pages/SignInPage.jsx'
+import SignUpPage from './pages/SignUpPage.jsx'
 
 function ProtectedRoute({ children }) {
   const { isLoaded, isSignedIn } = useAuth()
@@ -15,7 +17,7 @@ function ProtectedRoute({ children }) {
       Loading...
     </div>
   )
-  if (!isSignedIn) return <RedirectToSignIn />
+  if (!isSignedIn) return <RedirectToSignIn redirectUrl={window.location.href} />
   return <ClerkTokenProvider>{children}</ClerkTokenProvider>
 }
 
@@ -23,6 +25,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
         <Route path="/" element={
           <ProtectedRoute>
             <DashboardPage />
