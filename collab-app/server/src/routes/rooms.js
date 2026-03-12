@@ -20,13 +20,7 @@ router.post('/', authRequired, async (req, res) => {
       [name, req.user.id, inviteCode]
     )
 
-    // Buat dokumen kosong untuk room ini
-    await db.query(
-      `INSERT INTO documents (room_id) VALUES ($1)`,
-      [room.id]
-    )
-
-    // Owner otomatis jadi member
+    await db.query(`INSERT INTO documents (room_id) VALUES ($1)`, [room.id])
     await db.query(
       `INSERT INTO room_members (room_id, user_id, role) VALUES ($1, $2, 'owner')`,
       [room.id, req.user.id]
@@ -35,7 +29,7 @@ router.post('/', authRequired, async (req, res) => {
     res.status(201).json(room)
   } catch (err) {
     console.error('Create room error:', err)
-    res.status(500).json({ error: 'Server error' })
+    res.status(500).json({ error: err.message })
   }
 })
 
@@ -53,7 +47,8 @@ router.get('/', authRequired, async (req, res) => {
     )
     res.json(rooms)
   } catch (err) {
-    res.status(500).json({ error: 'Server error' })
+    console.error('Get rooms error:', err)
+    res.status(500).json({ error: err.message })
   }
 })
 
@@ -61,19 +56,14 @@ router.get('/', authRequired, async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const room = await db.findOne(
-      `SELECT r.*,
-              u.name as owner_name,
-              u.avatar_color as owner_color
-       FROM rooms r
-       JOIN users u ON r.owner_id = u.id
-       WHERE r.id = $1`,
+      `SELECT * FROM rooms WHERE id = $1`,
       [req.params.id]
     )
-
     if (!room) return res.status(404).json({ error: 'Room tidak ditemukan' })
     res.json(room)
   } catch (err) {
-    res.status(500).json({ error: 'Server error' })
+    console.error('Get room error:', err)
+    res.status(500).json({ error: err.message })
   }
 })
 
@@ -87,10 +77,8 @@ router.post('/join', authRequired, async (req, res) => {
       'SELECT * FROM rooms WHERE invite_code = $1',
       [inviteCode.toUpperCase()]
     )
-
     if (!room) return res.status(404).json({ error: 'Invite code tidak valid' })
 
-    // Cek sudah member atau belum
     const existing = await db.findOne(
       'SELECT * FROM room_members WHERE room_id = $1 AND user_id = $2',
       [room.id, req.user.id]
@@ -105,41 +93,37 @@ router.post('/join', authRequired, async (req, res) => {
 
     res.json(room)
   } catch (err) {
-    res.status(500).json({ error: 'Server error' })
+    console.error('Join room error:', err)
+    res.status(500).json({ error: err.message })
   }
 })
 
-// ─── GET /api/rooms/:id/members — Daftar member room ─────
+// ─── GET /api/rooms/:id/members ──────────────────────────
 router.get('/:id/members', async (req, res) => {
   try {
     const members = await db.findMany(
-      `SELECT u.id, u.name, u.avatar_color, rm.role
-       FROM room_members rm
-       JOIN users u ON rm.user_id = u.id
-       WHERE rm.room_id = $1
-       ORDER BY rm.role DESC, u.name ASC`,
+      `SELECT user_id as id, role FROM room_members WHERE room_id = $1`,
       [req.params.id]
     )
     res.json(members)
   } catch (err) {
-    res.status(500).json({ error: 'Server error' })
+    res.status(500).json({ error: err.message })
   }
 })
 
-// ─── DELETE /api/rooms/:id — Hapus room ──────────────────
+// ─── DELETE /api/rooms/:id ────────────────────────────────
 router.delete('/:id', authRequired, async (req, res) => {
   try {
     const room = await db.findOne(
       'SELECT * FROM rooms WHERE id = $1 AND owner_id = $2',
       [req.params.id, req.user.id]
     )
-
     if (!room) return res.status(403).json({ error: 'Forbidden' })
 
     await db.query('DELETE FROM rooms WHERE id = $1', [req.params.id])
     res.json({ message: 'Room berhasil dihapus' })
   } catch (err) {
-    res.status(500).json({ error: 'Server error' })
+    res.status(500).json({ error: err.message })
   }
 })
 

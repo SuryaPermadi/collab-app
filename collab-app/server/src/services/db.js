@@ -13,26 +13,28 @@ export const pool = new Pool({
 const SCHEMA = `
   CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-  CREATE TABLE IF NOT EXISTS users (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name        VARCHAR(100) NOT NULL,
-    email       VARCHAR(255) UNIQUE NOT NULL,
-    password    VARCHAR(255) NOT NULL,
-    avatar_color VARCHAR(7) DEFAULT '#00E5C3',
-    created_at  TIMESTAMP DEFAULT NOW()
-  );
+  -- Drop tabel lama jika ada (untuk migrasi dari UUID users ke Clerk text IDs)
+  DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name='rooms' AND column_name='owner_id' 
+               AND data_type='uuid') THEN
+      DROP TABLE IF EXISTS task_reactions, messages, subtasks, activity_logs, 
+                           tasks, board_columns, doc_snapshots, canvas_shapes, 
+                           documents, room_members, rooms, users CASCADE;
+    END IF;
+  END $$;
 
   CREATE TABLE IF NOT EXISTS rooms (
     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name         VARCHAR(255) NOT NULL,
-    owner_id     UUID REFERENCES users(id) ON DELETE CASCADE,
+    owner_id     TEXT NOT NULL,
     invite_code  VARCHAR(8) UNIQUE NOT NULL,
     created_at   TIMESTAMP DEFAULT NOW()
   );
 
   CREATE TABLE IF NOT EXISTS room_members (
     room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
     role    VARCHAR(20) DEFAULT 'editor',
     PRIMARY KEY (room_id, user_id)
   );
@@ -51,7 +53,7 @@ const SCHEMA = `
     type       VARCHAR(50) NOT NULL,
     props      JSONB NOT NULL DEFAULT '{}',
     z_index    INTEGER DEFAULT 0,
-    created_by UUID REFERENCES users(id),
+    created_by TEXT,
     updated_at TIMESTAMP DEFAULT NOW()
   );
 
@@ -78,11 +80,11 @@ const SCHEMA = `
     title       VARCHAR(255) NOT NULL,
     description TEXT DEFAULT '',
     priority    VARCHAR(20) DEFAULT 'medium',
-    assignee_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    assignee_id TEXT,
     due_date    DATE,
     labels      TEXT[] DEFAULT '{}',
     position    INTEGER DEFAULT 0,
-    created_by  UUID REFERENCES users(id),
+    created_by  TEXT,
     created_at  TIMESTAMP DEFAULT NOW(),
     updated_at  TIMESTAMP DEFAULT NOW()
   );
@@ -90,7 +92,7 @@ const SCHEMA = `
   CREATE TABLE IF NOT EXISTS activity_logs (
     id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     room_id    UUID REFERENCES rooms(id) ON DELETE CASCADE,
-    user_id    UUID REFERENCES users(id) ON DELETE SET NULL,
+    user_id    TEXT,
     user_name  VARCHAR(100),
     action     VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
@@ -108,7 +110,7 @@ const SCHEMA = `
   CREATE TABLE IF NOT EXISTS messages (
     id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     room_id    UUID REFERENCES rooms(id) ON DELETE CASCADE,
-    user_id    UUID REFERENCES users(id) ON DELETE SET NULL,
+    user_id    TEXT,
     user_name  VARCHAR(100) NOT NULL,
     avatar_color VARCHAR(7) DEFAULT '#00E5C3',
     content    TEXT NOT NULL,
@@ -118,7 +120,7 @@ const SCHEMA = `
   CREATE TABLE IF NOT EXISTS task_reactions (
     id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_id    UUID REFERENCES tasks(id) ON DELETE CASCADE,
-    user_id    UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_id    TEXT NOT NULL,
     emoji      VARCHAR(10) NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
     UNIQUE(task_id, user_id, emoji)
