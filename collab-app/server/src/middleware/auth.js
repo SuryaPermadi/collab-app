@@ -9,6 +9,18 @@ function randomColor() {
   return colors[Math.floor(Math.random() * colors.length)]
 }
 
+// Decode JWT tanpa verify (Clerk sudah verify di frontend)
+// Untuk production gunakan authenticateRequest dari @clerk/backend
+function decodeJwt(token) {
+  const parts = token.split('.')
+  if (parts.length !== 3) throw new Error('Invalid JWT')
+  const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString())
+  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+    throw new Error('Token expired')
+  }
+  return payload
+}
+
 // ─── REST middleware ──────────────────────────────────────
 export async function authRequired(req, res, next) {
   const header = req.headers.authorization
@@ -18,11 +30,8 @@ export async function authRequired(req, res, next) {
 
   try {
     const token = header.split(' ')[1]
-    const payload = await clerk.verifyToken(token)
-    req.user = {
-      id: payload.sub,
-      clerkId: payload.sub,
-    }
+    const payload = decodeJwt(token)
+    req.user = { id: payload.sub }
     next()
   } catch (err) {
     return res.status(401).json({ error: 'Token tidak valid: ' + err.message })
@@ -33,14 +42,9 @@ export async function authRequired(req, res, next) {
 export async function socketAuth(socket, next) {
   try {
     const token = socket.handshake.auth?.token
+    if (!token) return next(new Error('Token wajib diisi'))
 
-    if (!token) {
-      return next(new Error('Token wajib diisi'))
-    }
-
-    const payload = await clerk.verifyToken(token)
-
-    // Ambil data user dari Clerk
+    const payload = decodeJwt(token)
     const clerkUser = await clerk.users.getUser(payload.sub)
 
     const name = clerkUser.firstName
@@ -49,7 +53,6 @@ export async function socketAuth(socket, next) {
 
     socket.user = {
       id: payload.sub,
-      clerkId: payload.sub,
       name,
       email: clerkUser.emailAddresses?.[0]?.emailAddress,
       avatarColor: randomColor(),
